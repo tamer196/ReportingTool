@@ -1,0 +1,14 @@
+**/bin/
+**/obj/
+**/node_modules/
+**/.angular/
+**/dist/
+**/logs/
+**/TestResults/
+**/.vs/
+**/.idea/
+.git/
+.github/
+.secrets/
+**/appsettings.Development.json
+**/*.user

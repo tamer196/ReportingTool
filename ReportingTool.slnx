@@ -1,0 +1,13 @@
+<Solution>
+  <Folder Name="/src/" />
+  <Folder Name="/src/Platform/">
+    <Project Path="src/Platform/ReportingTool.Platform/ReportingTool.Platform.csproj" />
+  </Folder>
+  <Folder Name="/src/Services/">
+    <Project Path="src/Services/ReportingTool.Api/ReportingTool.Api.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/ReportingTool.Api.Tests/ReportingTool.Api.Tests.csproj" />
+    <Project Path="tests/ReportingTool.Platform.Tests/ReportingTool.Platform.Tests.csproj" />
+  </Folder>
+</Solution>

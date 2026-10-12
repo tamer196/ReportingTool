@@ -1,0 +1,115 @@
+.page {
+  display: grid;
+  gap: var(--space-5);
+  max-width: 48rem;
+  margin: 0 auto;
+  padding: var(--space-6) var(--space-4);
+}
+
+h1 {
+  margin: 0;
+  font-size: var(--font-size-xl);
+}
+
+h2 {
+  margin: 0 0 var(--space-3);
+  font-size: var(--font-size-lg);
+}
+
+.lead {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+.card {
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+}
+
+.add-form label {
+  display: block;
+  margin-bottom: var(--space-2);
+  font-weight: 600;
+}
+
+.row {
+  display: flex;
+  gap: var(--space-2);
+}
+
+input {
+  flex: 1;
+  min-width: 0;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius);
+  background: var(--color-background);
+  color: var(--color-text);
+  font: inherit;
+}
+
+input[aria-invalid='true'] {
+  border-color: var(--color-danger);
+}
+
+button {
+  padding: var(--space-2) var(--space-4);
+  border: 0;
+  border-radius: var(--radius);
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.hint {
+  margin: var(--space-2) 0 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.error {
+  color: var(--color-danger);
+}
+
+.greetings {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.greetings li {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
+  border-top: 1px solid var(--color-border);
+}
+
+.greetings li:first-child {
+  border-top: 0;
+}
+
+.message {
+  overflow-wrap: anywhere;
+}
+
+time,
+.empty,
+.build {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+time {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}

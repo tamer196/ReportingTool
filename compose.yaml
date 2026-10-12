@@ -1,0 +1,68 @@
+# Local environment: SQL Server + API + web, the same images the pipeline builds.
+#   1. scripts/init-local-secrets.ps1 (or .sh)   once per machine
+#   2. docker compose up --build                 → http://localhost:8080
+# See "Architecture/Developer Setup & Pipelines" in Paca for the full guide.
+name: reporting-tool
+
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: Developer
+    # The image reads the SA password only from MSSQL_SA_PASSWORD, so it is exported from the
+    # Compose secret file inside the container. It never appears in this file or in a .env file.
+    entrypoint:
+      - /bin/bash
+      - -c
+      - export MSSQL_SA_PASSWORD="$$(cat /run/secrets/sql_sa_password)" && exec /opt/mssql/bin/launch_sqlservr.sh /opt/mssql/bin/sqlservr
+    secrets:
+      - sql_sa_password
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver-data:/var/opt/mssql
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$$(cat /run/secrets/sql_sa_password)\" -C -b -Q 'SELECT 1' > /dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+
+  api:
+    build:
+      context: .
+      dockerfile: src/Services/ReportingTool.Api/Dockerfile
+    image: reporting-tool-api:local
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+    # Mounted at /run/secrets/Database__ConnectionString: the same key-per-file layout the
+    # vault's CSI driver mounts in the cloud.
+    secrets:
+      - source: api_database_connection_string
+        target: Database__ConnectionString
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    ports:
+      - "5080:8080"
+
+  web:
+    build:
+      context: src/Web
+    image: reporting-tool-web:local
+    environment:
+      API_UPSTREAM: http://api:8080
+    depends_on:
+      - api
+    ports:
+      - "8080:8080"
+
+secrets:
+  sql_sa_password:
+    file: ./.secrets/sql_sa_password
+  api_database_connection_string:
+    file: ./.secrets/Database__ConnectionString
+
+volumes:
+  sqlserver-data:

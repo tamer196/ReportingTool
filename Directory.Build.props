@@ -1,0 +1,40 @@
+<Project>
+
+  <!-- Shared by every .NET project in the repo. Per-project csproj files carry only what is
+       specific to them (SDK, RootNamespace, references). -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <!-- CS1591 (missing XML doc) stays quiet: the house rule is XML docs that explain WHY on
+         public types, which a compiler warning cannot judge. -->
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+
+    <!-- NuGet audit: vulnerable packages, including transitive ones, are reported at restore.
+         In CI every warning is an error, so a vulnerable dependency fails the pull request. -->
+    <NuGetAudit>true</NuGetAudit>
+    <NuGetAuditMode>all</NuGetAuditMode>
+    <NuGetAuditLevel>low</NuGetAuditLevel>
+  </PropertyGroup>
+
+  <!-- "Builds 0/0": CI (GitHub Actions sets CI=true) treats every warning as an error. Local
+       builds only warn, so a developer is not blocked mid-change. -->
+  <PropertyGroup Condition="'$(CI)' == 'true'">
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+  </PropertyGroup>
+
+  <!-- BR-14 (all timestamps in UTC): DateTime.Now and friends are banned at compile time. Time
+       comes from an injected TimeProvider so it is always UTC and tests can control it. -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.BannedApiAnalyzers">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <AdditionalFiles Include="$(MSBuildThisFileDirectory)BannedSymbols.txt" Link="BannedSymbols.txt" />
+  </ItemGroup>
+
+</Project>

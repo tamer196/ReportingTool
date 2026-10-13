@@ -49,7 +49,8 @@ $options = 'Database=ReportingTool;User Id=sa;Encrypt=True;TrustServerCertificat
 Write-Secret 'sql_sa_password' $password
 Write-Secret 'Database__ConnectionString' "Server=sqlserver,1433;$options;Password=$password"
 
-dotnet user-secrets set 'Database:ConnectionString' "Server=localhost,1433;$options;Password=$password" --project $apiProject | Out-Null
+$sqlPort = if ($env:RT_SQL_PORT) { $env:RT_SQL_PORT } else { '1433' }
+dotnet user-secrets set 'Database:ConnectionString' "Server=localhost,$sqlPort;$options;Password=$password" --project $apiProject | Out-Null
 
 Write-Host 'Local secrets created:'
 Write-Host '  .secrets/sql_sa_password, .secrets/Database__ConnectionString (Docker Compose)'

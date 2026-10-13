@@ -76,6 +76,10 @@ services own HTTP; design tokens only in component CSS (`src/Web/STYLE.md`).
 
 - .NET 10 SDK (`global.json`), Node 24 (`src/Web/.nvmrc`), SQL Server 2022 (compose and tests).
 - Ports: web 8080 (compose), API 5080 (compose and `dotnet run`), Angular dev server 4300, SQL 1433.
+  On the shared agent machine each workspace overrides them with `RT_WEB_PORT`, `RT_API_PORT` and
+  `RT_SQL_PORT`, and names its stack with `COMPOSE_PROJECT_NAME`, so parallel stacks never collide.
+- `dotnet user-secrets` is per Windows user, so agents on the shared machine share it: prefer
+  `docker compose up` (secrets live in this clone's `.secrets/`) over `dotnet run` against SQL.
 - `ASPNETCORE_ENVIRONMENT`: `Development` = a developer machine (including compose);
   `Dev` and `Test` = the cloud environments; `Testing` = integration tests.
 - Adding a migration: `dotnet ef migrations add <Name> --project src/Services/ReportingTool.Api

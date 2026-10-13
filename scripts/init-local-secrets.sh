@@ -36,7 +36,7 @@ printf '%s' "Server=sqlserver,1433;$options;Password=$password" > "$secrets_dir/
 # Bind-mounted Compose secrets keep host permissions; the containers run as non-root users.
 chmod 644 "$secrets_dir"/*
 
-dotnet user-secrets set "Database:ConnectionString" "Server=localhost,1433;$options;Password=$password" --project "$api_project" > /dev/null
+dotnet user-secrets set "Database:ConnectionString" "Server=localhost,${RT_SQL_PORT:-1433};$options;Password=$password" --project "$api_project" > /dev/null
 
 echo "Local secrets created:"
 echo "  .secrets/sql_sa_password, .secrets/Database__ConnectionString (Docker Compose)"

@@ -2,6 +2,8 @@
 #   1. scripts/init-local-secrets.ps1 (or .sh)   once per machine
 #   2. docker compose up --build                 → http://localhost:8080
 # See "Architecture/Developer Setup & Pipelines" in Paca for the full guide.
+# Several agents share one Docker host, so each workspace sets COMPOSE_PROJECT_NAME and the
+# RT_*_PORT variables to its own values; the defaults below are for a single developer.
 name: reporting-tool
 
 services:
@@ -19,7 +21,7 @@ services:
     secrets:
       - sql_sa_password
     ports:
-      - "1433:1433"
+      - "${RT_SQL_PORT:-1433}:1433"
     volumes:
       - sqlserver-data:/var/opt/mssql
     healthcheck:
@@ -33,7 +35,7 @@ services:
     build:
       context: .
       dockerfile: src/Services/ReportingTool.Api/Dockerfile
-    image: reporting-tool-api:local
+    image: ${COMPOSE_PROJECT_NAME:-reporting-tool}-api:local
     environment:
       ASPNETCORE_ENVIRONMENT: Development
     # Mounted at /run/secrets/Database__ConnectionString: the same key-per-file layout the
@@ -45,18 +47,18 @@ services:
       sqlserver:
         condition: service_healthy
     ports:
-      - "5080:8080"
+      - "${RT_API_PORT:-5080}:8080"
 
   web:
     build:
       context: src/Web
-    image: reporting-tool-web:local
+    image: ${COMPOSE_PROJECT_NAME:-reporting-tool}-web:local
     environment:
       API_UPSTREAM: http://api:8080
     depends_on:
       - api
     ports:
-      - "8080:8080"
+      - "${RT_WEB_PORT:-8080}:8080"
 
 secrets:
   sql_sa_password:

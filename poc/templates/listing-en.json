@@ -1,0 +1,141 @@
+{
+ "schemaVersion": 1,
+ "engine": "rt-html-chromium/0.1-poc",
+ "layout": {
+  "direction": "ltr",
+  "culture": "en-GB",
+  "page": {
+   "size": "A4",
+   "orientation": "portrait",
+   "marginTopMm": 10,
+   "marginBottomMm": 10,
+   "marginStartMm": 12,
+   "marginEndMm": 12
+  },
+  "pageNumbering": "document",
+  "pageHeader": {
+   "heightMm": 10,
+   "items": [
+    {
+     "id": "h1",
+     "kind": "text",
+     "xMm": 0,
+     "yMm": 0,
+     "widthMm": 186,
+     "heightMm": 7,
+     "text": "{Report Name} — up to {Parameter: ToClient}",
+     "style": {
+      "fontSizePt": 11,
+      "bold": true,
+      "align": "start"
+     }
+    },
+    {
+     "id": "h2",
+     "kind": "line",
+     "xMm": 0,
+     "yMm": 8,
+     "widthMm": 186,
+     "heightMm": 1
+    }
+   ]
+  },
+  "pageFooter": {
+   "heightMm": 8,
+   "items": [
+    {
+     "id": "f1",
+     "kind": "text",
+     "xMm": 0,
+     "yMm": 1,
+     "widthMm": 186,
+     "heightMm": 6,
+     "text": "Page {Page} of {Total Pages} · {Run Date}",
+     "style": {
+      "fontSizePt": 8,
+      "bold": false,
+      "align": "end"
+     }
+    }
+   ]
+  },
+  "body": [
+   {
+    "type": "table",
+    "id": "lst",
+    "pageBreakPerGroup": false,
+    "grandTotal": false,
+    "columns": [
+     {
+      "field": "ClientId",
+      "header": "Client ID",
+      "widthPct": 10,
+      "format": "text"
+     },
+     {
+      "field": "ClientNameEn",
+      "header": "Client",
+      "widthPct": 24,
+      "format": "text"
+     },
+     {
+      "field": "Branch",
+      "header": "Branch",
+      "widthPct": 8,
+      "format": "text"
+     },
+     {
+      "field": "TradeDate",
+      "header": "Date",
+      "widthPct": 11,
+      "format": "date"
+     },
+     {
+      "field": "Instrument",
+      "header": "Instrument",
+      "widthPct": 17,
+      "format": "text"
+     },
+     {
+      "field": "Side",
+      "header": "Side",
+      "widthPct": 7,
+      "format": "text"
+     },
+     {
+      "field": "Iban",
+      "header": "IBAN (masked)",
+      "widthPct": 23,
+      "format": "text"
+     }
+    ]
+   }
+  ]
+ },
+ "bindings": [
+  {
+   "componentId": "lst",
+   "datasetId": "client-transactions",
+   "filters": [
+    {
+     "field": "ClientId",
+     "op": "lte",
+     "parameter": "ToClient"
+    }
+   ],
+   "sort": [
+    "ClientId",
+    "TradeDate"
+   ]
+  }
+ ],
+ "parameters": [
+  {
+   "name": "ToClient",
+   "label": "Up to client",
+   "type": "text",
+   "default": "CL-00100",
+   "required": true
+  }
+ ]
+}

@@ -22,3 +22,33 @@
 .skip-link:focus {
   top: var(--space-2);
 }
+
+.nav {
+  display: flex;
+  gap: var(--space-4);
+  margin-inline-start: var(--space-5);
+}
+
+.nav a {
+  color: var(--color-text-muted);
+  text-decoration: none;
+}
+
+.nav a.active {
+  color: var(--color-text);
+  font-weight: 700;
+}
+
+.user {
+  margin-inline-start: auto;
+  color: var(--color-text-muted);
+}
+
+.link {
+  margin-inline-start: var(--space-3);
+  border: 0;
+  background: none;
+  color: var(--color-accent);
+  cursor: pointer;
+  font: inherit;
+}

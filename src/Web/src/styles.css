@@ -68,3 +68,31 @@ body {
   outline: 2px solid var(--color-focus);
   outline-offset: 2px;
 }
+
+/*
+ * Report fonts (RT-108): the same OFL-1.1 files the renderer installs in its container, so the
+ * designer canvas and the PDF use identical glyphs and metrics.
+ */
+@font-face {
+  font-family: 'Noto Sans';
+  src: url('/fonts/NotoSans-Regular.ttf') format('truetype');
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: 'Noto Sans';
+  src: url('/fonts/NotoSans-Bold.ttf') format('truetype');
+  font-weight: 700;
+}
+
+@font-face {
+  font-family: 'Noto Sans Arabic';
+  src: url('/fonts/NotoSansArabic-Regular.ttf') format('truetype');
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: 'Noto Sans Arabic';
+  src: url('/fonts/NotoSansArabic-Bold.ttf') format('truetype');
+  font-weight: 700;
+}

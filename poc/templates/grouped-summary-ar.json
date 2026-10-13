@@ -1,0 +1,292 @@
+{
+ "schemaVersion": 1,
+ "engine": "rt-html-chromium/0.1-poc",
+ "layout": {
+  "direction": "rtl",
+  "culture": "ar-AE",
+  "page": {
+   "size": "A4",
+   "orientation": "portrait",
+   "marginTopMm": 10,
+   "marginBottomMm": 10,
+   "marginStartMm": 12,
+   "marginEndMm": 12
+  },
+  "pageHeader": {
+   "heightMm": 18,
+   "items": [
+    {
+     "id": "h1",
+     "kind": "text",
+     "xMm": 0,
+     "yMm": 0,
+     "widthMm": 110,
+     "heightMm": 8,
+     "text": "{Report Name}",
+     "style": {
+      "fontSizePt": 13,
+      "bold": true,
+      "align": "start"
+     }
+    },
+    {
+     "id": "h2",
+     "kind": "text",
+     "xMm": 0,
+     "yMm": 8,
+     "widthMm": 110,
+     "heightMm": 6,
+     "text": "شركة الوساطة التجريبية — Demo Brokerage Ltd.",
+     "style": {
+      "fontSizePt": 8.5,
+      "bold": false,
+      "align": "start"
+     }
+    },
+    {
+     "id": "h3",
+     "kind": "text",
+     "xMm": 110,
+     "yMm": 0,
+     "widthMm": 76,
+     "heightMm": 6,
+     "text": "تاريخ التشغيل: {Run Date}",
+     "style": {
+      "fontSizePt": 8,
+      "bold": false,
+      "align": "end"
+     }
+    },
+    {
+     "id": "h4",
+     "kind": "text",
+     "xMm": 110,
+     "yMm": 6,
+     "widthMm": 76,
+     "heightMm": 6,
+     "text": "أُعدّ بواسطة: {Run By}",
+     "style": {
+      "fontSizePt": 8,
+      "bold": false,
+      "align": "end"
+     }
+    },
+    {
+     "id": "h5",
+     "kind": "line",
+     "xMm": 0,
+     "yMm": 16,
+     "widthMm": 186,
+     "heightMm": 1
+    }
+   ]
+  },
+  "pageFooter": {
+   "heightMm": 10,
+   "items": [
+    {
+     "id": "f0",
+     "kind": "line",
+     "xMm": 0,
+     "yMm": 0,
+     "widthMm": 186,
+     "heightMm": 1
+    },
+    {
+     "id": "f1",
+     "kind": "text",
+     "xMm": 0,
+     "yMm": 2,
+     "widthMm": 120,
+     "heightMm": 6,
+     "text": "سري — للاستخدام الداخلي فقط · {Parameter: ToClient}",
+     "style": {
+      "fontSizePt": 8,
+      "bold": false,
+      "align": "start"
+     }
+    },
+    {
+     "id": "f2",
+     "kind": "text",
+     "xMm": 120,
+     "yMm": 2,
+     "widthMm": 66,
+     "heightMm": 6,
+     "text": "صفحة {Page} من {Total Pages}",
+     "style": {
+      "fontSizePt": 8,
+      "bold": true,
+      "align": "end"
+     }
+    }
+   ]
+  },
+  "pageNumbering": "document",
+  "body": [
+   {
+    "type": "text",
+    "id": "t1",
+    "heading": true,
+    "text": "ملخص الحركات حسب مدير الحساب — Transactions by account manager",
+    "style": {
+     "fontSizePt": 14,
+     "bold": true,
+     "align": "start"
+    }
+   },
+   {
+    "type": "text",
+    "id": "t2",
+    "style": {
+     "fontSizePt": 9.5,
+     "bold": false,
+     "align": "start"
+    },
+    "text": "يعرض هذا التقرير حركات العملاء حتى العميل {Parameter: ToClient}، مجمّعة حسب مدير الحساب مع المجاميع الفرعية. الأرقام بالدولار الأمريكي (USD) مثل ‎-1,234.50‎، والتواريخ بصيغة ISO 8601 مثل 2026-10-13، وأرقام عربية هندية مثل ١٢٣٤٥. تاريخ الإعداد: {Run Date}."
+   },
+   {
+    "type": "kpi",
+    "id": "k1",
+    "label": "إجمالي المبالغ (USD)",
+    "valueField": "Amount",
+    "aggregate": "sum",
+    "format": "amount"
+   },
+   {
+    "type": "kpi",
+    "id": "k2",
+    "label": "عدد الحركات",
+    "valueField": "Amount",
+    "aggregate": "count",
+    "format": "integer"
+   },
+   {
+    "type": "chart",
+    "id": "c1",
+    "title": "المبالغ حسب الأداة",
+    "chartType": "bar",
+    "categoryField": "Instrument",
+    "valueField": "Amount",
+    "heightMm": 62
+   },
+   {
+    "type": "table",
+    "id": "tbl",
+    "title": "تفاصيل الحركات",
+    "groupBy": "AccountManager",
+    "pageBreakPerGroup": false,
+    "grandTotal": true,
+    "groupHeader": "مدير الحساب: {Field: AccountManager}",
+    "columns": [
+     {
+      "field": "ClientId",
+      "header": "رقم العميل",
+      "widthPct": 11,
+      "format": "text"
+     },
+     {
+      "field": "ClientNameAr",
+      "header": "العميل",
+      "widthPct": 25,
+      "format": "text"
+     },
+     {
+      "field": "TradeDate",
+      "header": "التاريخ",
+      "widthPct": 12,
+      "format": "date"
+     },
+     {
+      "field": "Instrument",
+      "header": "الأداة",
+      "widthPct": 17,
+      "format": "text"
+     },
+     {
+      "field": "Side",
+      "header": "الاتجاه",
+      "widthPct": 8,
+      "format": "text"
+     },
+     {
+      "field": "Quantity",
+      "header": "الكمية",
+      "widthPct": 10,
+      "format": "amount"
+     },
+     {
+      "field": "Amount",
+      "header": "المبلغ (USD)",
+      "widthPct": 17,
+      "format": "amount",
+      "total": true
+     }
+    ]
+   }
+  ]
+ },
+ "bindings": [
+  {
+   "componentId": "k1",
+   "datasetId": "client-transactions",
+   "filters": [
+    {
+     "field": "ClientId",
+     "op": "lte",
+     "parameter": "ToClient"
+    }
+   ],
+   "sort": []
+  },
+  {
+   "componentId": "k2",
+   "datasetId": "client-transactions",
+   "filters": [
+    {
+     "field": "ClientId",
+     "op": "lte",
+     "parameter": "ToClient"
+    }
+   ],
+   "sort": []
+  },
+  {
+   "componentId": "c1",
+   "datasetId": "client-transactions",
+   "filters": [
+    {
+     "field": "ClientId",
+     "op": "lte",
+     "parameter": "ToClient"
+    }
+   ],
+   "sort": []
+  },
+  {
+   "componentId": "tbl",
+   "datasetId": "client-transactions",
+   "filters": [
+    {
+     "field": "ClientId",
+     "op": "lte",
+     "parameter": "ToClient"
+    }
+   ],
+   "sort": [
+    "AccountManager",
+    "ClientId",
+    "TradeDate"
+   ]
+  }
+ ],
+ "parameters": [
+  {
+   "name": "ToClient",
+   "label": "حتى العميل",
+   "type": "text",
+   "default": "CL-00070",
+   "required": true
+  }
+ ]
+}

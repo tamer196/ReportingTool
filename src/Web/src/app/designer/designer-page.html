@@ -1,0 +1,583 @@
+<div class="designer">
+  <h1 class="visually-hidden">Report designer</h1>
+
+  <section class="toolbar" aria-label="Report">
+    <label class="field">
+      <span>Open</span>
+      <select (change)="open(value($event))">
+        <option value="">Choose a template…</option>
+        @for (t of templates(); track t.id) {
+          <option [value]="t.id" [selected]="t.id === templateId()">
+            {{ t.name }} (v{{ t.version }})
+          </option>
+        }
+      </select>
+    </label>
+    <label class="field grow">
+      <span>Name</span>
+      <input type="text" [value]="name()" (change)="name.set(value($event))" />
+    </label>
+    <div class="group" role="group" aria-label="New report">
+      <button type="button" (click)="newReport('rtl')">New (Arabic, RTL)</button>
+      <button type="button" (click)="newReport('ltr')">New (English, LTR)</button>
+    </div>
+    <div class="group" role="group" aria-label="History">
+      <button type="button" (click)="undo()" [disabled]="!canUndo()" aria-keyshortcuts="Control+Z">
+        Undo
+      </button>
+      <button type="button" (click)="redo()" [disabled]="!canRedo()" aria-keyshortcuts="Control+Y">
+        Redo
+      </button>
+    </div>
+    <label class="field">
+      <span>Zoom</span>
+      <select (change)="zoom.set(numberValue($event))">
+        @for (z of [0.5, 0.75, 1, 1.25, 1.5, 2]; track z) {
+          <option [value]="z" [selected]="z === zoom()">{{ z * 100 }} %</option>
+        }
+      </select>
+    </label>
+    <div class="group" role="group" aria-label="Run">
+      <button type="button" class="primary" (click)="save()" [disabled]="busy()">Save</button>
+      <button type="button" (click)="preview()" [disabled]="busy()">Preview PDF</button>
+      <button type="button" (click)="exportXlsx()" [disabled]="busy()">Export Excel</button>
+    </div>
+  </section>
+
+  @if (def().parameters.length > 0) {
+    <section class="params" aria-label="Report parameters">
+      @for (p of def().parameters; track p.name) {
+        <label class="field">
+          <span
+            >{{ p.label }}
+            @if (p.required) {
+              <span aria-hidden="true"> *</span>
+            }
+          </span>
+          <input
+            type="text"
+            [value]="paramValues()[p.name]"
+            [required]="!!p.required"
+            (change)="setParam(p.name, value($event))"
+          />
+        </label>
+      }
+    </section>
+  }
+
+  <p class="status" role="status" aria-live="polite">{{ status() }}</p>
+  @if (errors().length > 0) {
+    <ul class="errors" role="alert">
+      @for (e of errors(); track e) {
+        <li>{{ e }}</li>
+      }
+    </ul>
+  }
+
+  <div class="workspace">
+    <section class="palette" aria-labelledby="palette-title">
+      <h2 id="palette-title">Components</h2>
+      <p class="hint" id="palette-hint">
+        Press a button to add it to the end of the page, or drag it to a position.
+      </p>
+      <ul
+        cdkDropList
+        id="palette-list"
+        [cdkDropListConnectedTo]="['body-list']"
+        cdkDropListSortingDisabled
+        [cdkDropListData]="paletteTypes"
+      >
+        @for (type of paletteTypes; track type) {
+          <li cdkDrag [cdkDragData]="type">
+            <button type="button" (click)="add(type)" aria-describedby="palette-hint">
+              {{ labels[type] }}
+            </button>
+          </li>
+        }
+      </ul>
+      <h2>Header and footer</h2>
+      <button type="button" (click)="addBandText('pageHeader')">Text in page header</button>
+      <button type="button" (click)="addBandText('pageFooter')">Text in page footer</button>
+      <p class="hint" id="kbd-help">
+        Keyboard: Tab to an item, Enter selects it. Header and footer items: arrow keys move 1 mm
+        (Shift: 5 mm), Alt+arrows resize. Page body: Alt+Up / Alt+Down reorder. Delete removes.
+        Ctrl+Z / Ctrl+Y undo and redo.
+      </p>
+    </section>
+
+    <section class="canvas-scroll" aria-label="Page canvas">
+      <div class="zoom" [style.transform]="'scale(' + zoom() + ')'">
+        <div
+          class="page"
+          [attr.dir]="layout().direction"
+          [attr.lang]="rtl() ? 'ar' : 'en'"
+          [style.font-family]="fonts()"
+          [style.width.mm]="page().w"
+          [style.min-height.mm]="page().h"
+          [style.padding-block-start.mm]="layout().page.marginTopMm"
+          [style.padding-block-end.mm]="layout().page.marginBottomMm"
+          [style.padding-inline-start.mm]="layout().page.marginStartMm"
+          [style.padding-inline-end.mm]="layout().page.marginEndMm"
+        >
+          <ng-container *ngTemplateOutlet="bandTpl; context: { $implicit: 'pageHeader' }" />
+          <div
+            class="body"
+            role="list"
+            aria-label="Page body (flows across pages)"
+            cdkDropList
+            id="body-list"
+            [cdkDropListData]="layout().body"
+            (cdkDropListDropped)="dropOnBody($event)"
+          >
+            @for (c of layout().body; track c.id; let i = $index) {
+              <div
+                class="comp-wrap"
+                role="listitem"
+                cdkDrag
+                [cdkDragData]="c"
+                [cdkDragScale]="zoom()"
+              >
+                <div
+                  class="comp"
+                  [id]="'comp-' + c.id"
+                  role="button"
+                  tabindex="0"
+                  [class.selected]="selection()?.id === c.id"
+                  [attr.aria-pressed]="selection()?.id === c.id"
+                  [attr.aria-label]="
+                    describe(c) + ', position ' + (i + 1) + ' of ' + layout().body.length
+                  "
+                  aria-describedby="kbd-help"
+                  (click)="selectComponent(c)"
+                  (keydown)="onComponentKey(i, c, $event)"
+                >
+                  @switch (c.type) {
+                    @case ('text') {
+                      <div
+                        class="c-text"
+                        [style.font-size.pt]="asText(c).style.fontSizePt"
+                        [style.font-weight]="asText(c).style.bold ? 700 : 400"
+                        [style.text-align]="asText(c).style.align"
+                      >
+                        {{ asText(c).text }}
+                      </div>
+                    }
+                    @case ('table') {
+                      @if (asTable(c).title) {
+                        <div class="t-title">{{ asTable(c).title }}</div>
+                      }
+                      <table class="t">
+                        <thead>
+                          <tr>
+                            @for (col of asTable(c).columns; track col.field) {
+                              <th [style.width.%]="col.widthPct">{{ col.header }}</th>
+                            }
+                          </tr>
+                        </thead>
+                        <tbody>
+                          @if (asTable(c).groupBy) {
+                            <tr class="gh">
+                              <td [attr.colspan]="asTable(c).columns.length">
+                                {{ asTable(c).groupHeader || fieldLabel(asTable(c).groupBy) }}
+                              </td>
+                            </tr>
+                          }
+                          @for (row of [1, 2, 3]; track row) {
+                            <tr>
+                              @for (col of asTable(c).columns; track col.field) {
+                                <td class="placeholder">‹{{ fieldLabel(col.field) }}›</td>
+                              }
+                            </tr>
+                          }
+                        </tbody>
+                      </table>
+                    }
+                    @case ('chart') {
+                      <div class="t-title">{{ asChart(c).title }}</div>
+                      <div
+                        class="chart-ph"
+                        [style.height.mm]="asChart(c).heightMm"
+                        aria-hidden="true"
+                      >
+                        @for (h of [55, 80, 40, 95, 65]; track $index) {
+                          <span [style.height.%]="h"></span>
+                        }
+                      </div>
+                    }
+                    @case ('kpi') {
+                      <div class="kpi">
+                        <div class="v">123,456.00</div>
+                        <div class="l">{{ asKpi(c).label }}</div>
+                      </div>
+                    }
+                    @case ('pageBreak') {
+                      <div class="pb">{{ labels.pageBreak }}</div>
+                    }
+                  }
+                </div>
+              </div>
+            } @empty {
+              <p class="empty">Drop components here, or press a palette button.</p>
+            }
+          </div>
+          <ng-container *ngTemplateOutlet="bandTpl; context: { $implicit: 'pageFooter' }" />
+        </div>
+      </div>
+    </section>
+
+    <section class="props" aria-labelledby="props-title">
+      <h2 id="props-title">Properties</h2>
+      @if (selectedComponent(); as c) {
+        <p class="kind">{{ labels[c.type] }}</p>
+        @switch (c.type) {
+          @case ('text') {
+            <label class="field">
+              <span
+                >Text (fields: {{ '{' }}Report Name{{ '}' }}, {{ '{' }}Run Date{{ '}' }},
+                {{ '{' }}Parameter: X{{ '}' }})</span
+              >
+              <textarea
+                rows="4"
+                [value]="asText(c).text"
+                (change)="updateComponent(asText(c), { text: value($event) })"
+              ></textarea>
+            </label>
+            <label class="field">
+              <span>Font size (pt)</span>
+              <input
+                type="number"
+                min="6"
+                max="48"
+                [value]="asText(c).style.fontSizePt"
+                (change)="setTextStyle(asText(c), { fontSizePt: numberValue($event) })"
+              />
+            </label>
+            <label class="check"
+              ><input
+                type="checkbox"
+                [checked]="asText(c).style.bold"
+                (change)="setTextStyle(asText(c), { bold: checked($event) })"
+              />
+              Bold</label
+            >
+            <label class="check"
+              ><input
+                type="checkbox"
+                [checked]="!!asText(c).heading"
+                (change)="updateComponent(asText(c), { heading: checked($event) })"
+              />
+              Heading (for screen readers)</label
+            >
+          }
+          @case ('table') {
+            <label class="field">
+              <span>Title</span>
+              <input
+                type="text"
+                [value]="asTable(c).title ?? ''"
+                (change)="updateComponent(asTable(c), { title: value($event) || null })"
+              />
+            </label>
+            <label class="field">
+              <span>Data</span>
+              <select (change)="setDataset(c, value($event))">
+                @for (d of datasets(); track d.id) {
+                  <option [value]="d.id" [selected]="d.id === selectedBinding()?.datasetId">
+                    {{ rtl() ? d.nameAr : d.name }}
+                  </option>
+                }
+              </select>
+            </label>
+            <fieldset>
+              <legend>Columns (only fields you may see are listed)</legend>
+              @for (f of selectedSchema()?.fields ?? []; track f.key) {
+                <label class="check">
+                  <input
+                    type="checkbox"
+                    [checked]="hasColumn(asTable(c), f.key)"
+                    (change)="toggleColumn(asTable(c), f, checked($event))"
+                  />
+                  {{ rtl() ? f.labelAr : f.label }}
+                  @if (f.masked) {
+                    <em> (masked)</em>
+                  }
+                </label>
+              }
+            </fieldset>
+            @for (col of asTable(c).columns; track col.field; let i = $index) {
+              <fieldset class="col">
+                <legend>{{ fieldLabel(col.field) }}</legend>
+                <label class="field"
+                  ><span>Header</span
+                  ><input
+                    type="text"
+                    [value]="col.header"
+                    (change)="updateColumn(asTable(c), i, { header: value($event) })"
+                /></label>
+                <label class="field"
+                  ><span>Width %</span
+                  ><input
+                    type="number"
+                    min="3"
+                    max="100"
+                    [value]="col.widthPct"
+                    (change)="updateColumn(asTable(c), i, { widthPct: numberValue($event) })"
+                /></label>
+                <label class="field">
+                  <span>Format</span>
+                  <select (change)="updateColumn(asTable(c), i, { format: $any(value($event)) })">
+                    @for (fmt of formats; track fmt) {
+                      <option [value]="fmt" [selected]="fmt === col.format">{{ fmt }}</option>
+                    }
+                  </select>
+                </label>
+                <label class="check"
+                  ><input
+                    type="checkbox"
+                    [checked]="!!col.total"
+                    (change)="updateColumn(asTable(c), i, { total: checked($event) })"
+                  />
+                  Total</label
+                >
+              </fieldset>
+            }
+            <label class="field">
+              <span>Group by</span>
+              <select (change)="updateComponent(asTable(c), { groupBy: value($event) || null })">
+                <option value="">No grouping</option>
+                @for (f of selectedSchema()?.fields ?? []; track f.key) {
+                  @if (!f.masked) {
+                    <option [value]="f.key" [selected]="f.key === asTable(c).groupBy">
+                      {{ rtl() ? f.labelAr : f.label }}
+                    </option>
+                  }
+                }
+              </select>
+            </label>
+            <label class="check"
+              ><input
+                type="checkbox"
+                [checked]="!!asTable(c).pageBreakPerGroup"
+                (change)="updateComponent(asTable(c), { pageBreakPerGroup: checked($event) })"
+              />
+              New page per group (statements)</label
+            >
+            <label class="check"
+              ><input
+                type="checkbox"
+                [checked]="!!asTable(c).grandTotal"
+                (change)="updateComponent(asTable(c), { grandTotal: checked($event) })"
+              />
+              Grand total</label
+            >
+          }
+          @case ('chart') {
+            <label class="field"
+              ><span>Title</span
+              ><input
+                type="text"
+                [value]="asChart(c).title"
+                (change)="updateComponent(asChart(c), { title: value($event) })"
+            /></label>
+            <label class="field">
+              <span>Type</span>
+              <select (change)="updateComponent(asChart(c), { chartType: $any(value($event)) })">
+                @for (t of ['bar', 'line', 'pie']; track t) {
+                  <option [value]="t" [selected]="t === asChart(c).chartType">{{ t }}</option>
+                }
+              </select>
+            </label>
+            <label class="field">
+              <span>Category</span>
+              <select (change)="updateComponent(asChart(c), { categoryField: value($event) })">
+                @for (f of selectedSchema()?.fields ?? []; track f.key) {
+                  <option [value]="f.key" [selected]="f.key === asChart(c).categoryField">
+                    {{ rtl() ? f.labelAr : f.label }}
+                  </option>
+                }
+              </select>
+            </label>
+            <label class="field">
+              <span>Value (sum)</span>
+              <select (change)="updateComponent(asChart(c), { valueField: value($event) })">
+                @for (f of selectedSchema()?.fields ?? []; track f.key) {
+                  @if (f.dataType === 'number') {
+                    <option [value]="f.key" [selected]="f.key === asChart(c).valueField">
+                      {{ rtl() ? f.labelAr : f.label }}
+                    </option>
+                  }
+                }
+              </select>
+            </label>
+          }
+          @case ('kpi') {
+            <label class="field"
+              ><span>Label</span
+              ><input
+                type="text"
+                [value]="asKpi(c).label"
+                (change)="updateComponent(asKpi(c), { label: value($event) })"
+            /></label>
+            <label class="field">
+              <span>Aggregate</span>
+              <select (change)="updateComponent(asKpi(c), { aggregate: $any(value($event)) })">
+                @for (a of ['sum', 'count', 'avg']; track a) {
+                  <option [value]="a" [selected]="a === asKpi(c).aggregate">{{ a }}</option>
+                }
+              </select>
+            </label>
+          }
+        }
+        <button type="button" class="danger" (click)="removeComponent(c)">Remove</button>
+      } @else if (selectedBandItem(); as item) {
+        <p class="kind">{{ itemLabel(item) }}</p>
+        @if (item.kind === 'text') {
+          <label class="field">
+            <span
+              >Text (also {{ '{' }}Page{{ '}' }}, {{ '{' }}Total Pages{{ '}' }}, {{ '{' }}Group{{
+                '}'
+              }})</span
+            >
+            <input
+              type="text"
+              [value]="item.text ?? ''"
+              (change)="updateBandItem(selectedBand()!, item, { text: value($event) })"
+            />
+          </label>
+          <label class="field">
+            <span>Align</span>
+            <select
+              (change)="updateItemStyle(selectedBand()!, item, { align: $any(value($event)) })"
+            >
+              @for (a of ['start', 'center', 'end']; track a) {
+                <option [value]="a" [selected]="a === item.style?.align">{{ a }}</option>
+              }
+            </select>
+          </label>
+        }
+        <div class="grid2">
+          <label class="field"
+            ><span>X (mm)</span
+            ><input
+              type="number"
+              [value]="item.xMm"
+              (change)="updateBandItem(selectedBand()!, item, { xMm: numberValue($event) })"
+          /></label>
+          <label class="field"
+            ><span>Y (mm)</span
+            ><input
+              type="number"
+              [value]="item.yMm"
+              (change)="updateBandItem(selectedBand()!, item, { yMm: numberValue($event) })"
+          /></label>
+          <label class="field"
+            ><span>Width (mm)</span
+            ><input
+              type="number"
+              [value]="item.widthMm"
+              (change)="updateBandItem(selectedBand()!, item, { widthMm: numberValue($event) })"
+          /></label>
+          <label class="field"
+            ><span>Height (mm)</span
+            ><input
+              type="number"
+              [value]="item.heightMm"
+              (change)="updateBandItem(selectedBand()!, item, { heightMm: numberValue($event) })"
+          /></label>
+        </div>
+      } @else {
+        <p class="kind">Report settings</p>
+        <label class="field">
+          <span>Direction</span>
+          <select (change)="setDirection($any(value($event)))">
+            <option value="rtl" [selected]="rtl()">Right to left (Arabic)</option>
+            <option value="ltr" [selected]="!rtl()">Left to right</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Orientation</span>
+          <select (change)="setOrientation(value($event))">
+            <option value="portrait" [selected]="layout().page.orientation === 'portrait'">
+              Portrait
+            </option>
+            <option value="landscape" [selected]="layout().page.orientation === 'landscape'">
+              Landscape
+            </option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Page numbers</span>
+          <select (change)="setNumbering(value($event))">
+            <option value="document" [selected]="layout().pageNumbering === 'document'">
+              Whole document
+            </option>
+            <option value="perGroup" [selected]="layout().pageNumbering === 'perGroup'">
+              Restart for each group
+            </option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Watermark</span>
+          <input
+            type="text"
+            [value]="layout().watermark ?? ''"
+            (change)="setWatermark(value($event))"
+          />
+        </label>
+      }
+    </section>
+  </div>
+
+  <ng-template #bandTpl let-name>
+    <div
+      class="band"
+      [class.footer]="name === 'pageFooter'"
+      [style.height.mm]="band(name).heightMm"
+      role="group"
+      [attr.aria-label]="
+        name === 'pageHeader'
+          ? 'Page header, repeated on every page'
+          : 'Page footer, repeated on every page'
+      "
+    >
+      @for (item of band(name).items; track item.id) {
+        <div
+          class="item"
+          [class.line]="item.kind === 'line'"
+          [class.selected]="selection()?.id === item.id"
+          [id]="'item-' + item.id"
+          cdkDrag
+          cdkDragBoundary=".band"
+          [cdkDragScale]="zoom()"
+          (cdkDragEnded)="onBandItemDragEnded(name, item, $event)"
+          role="button"
+          tabindex="0"
+          [attr.aria-pressed]="selection()?.id === item.id"
+          [attr.aria-label]="itemLabel(item) + ', ' + item.xMm + ' by ' + item.yMm + ' mm'"
+          aria-describedby="kbd-help"
+          [style.inset-inline-start.mm]="item.xMm"
+          [style.top.mm]="item.yMm"
+          [style.width.mm]="item.widthMm"
+          [style.height.mm]="item.heightMm"
+          [style.font-size.pt]="item.style?.fontSizePt"
+          [style.font-weight]="item.style?.bold ? 700 : 400"
+          [style.text-align]="item.style?.align"
+          (click)="selectBandItem(name, item)"
+          (keydown)="onBandItemKey(name, item, $event)"
+        >
+          {{ item.kind === 'text' ? item.text : '' }}
+        </div>
+      }
+    </div>
+  </ng-template>
+
+  @if (previewUrl(); as url) {
+    <section class="viewer" aria-label="PDF preview">
+      <div class="viewer-bar">
+        <h2>Preview</h2>
+        <button type="button" (click)="closePreview()">Close preview</button>
+      </div>
+      <iframe [src]="url" title="PDF preview of the report"></iframe>
+    </section>
+  }
+</div>

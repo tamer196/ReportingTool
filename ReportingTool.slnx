@@ -5,6 +5,7 @@
   </Folder>
   <Folder Name="/src/Services/">
     <Project Path="src/Services/ReportingTool.Api/ReportingTool.Api.csproj" />
+    <Project Path="src/Services/ReportingTool.Reports/ReportingTool.Reports.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/ReportingTool.Api.Tests/ReportingTool.Api.Tests.csproj" />

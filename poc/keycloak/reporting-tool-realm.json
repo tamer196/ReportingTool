@@ -1,0 +1,75 @@
+{
+  "realm": "reporting-tool",
+  "displayName": "Reporting Tool (RT-108 PoC, local only)",
+  "enabled": true,
+  "sslRequired": "none",
+  "accessTokenLifespan": 900,
+  "ssoSessionIdleTimeout": 3600,
+  "clients": [
+    {
+      "clientId": "rt-web",
+      "name": "Reporting Tool SPA",
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "redirectUris": ["${RT_PUBLIC_URL}/*"],
+      "webOrigins": ["${RT_PUBLIC_URL}"],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "${RT_PUBLIC_URL}/*"
+      },
+      "protocolMappers": [
+        {
+          "name": "rt-api audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "config": { "included.custom.audience": "rt-api", "access.token.claim": "true", "id.token.claim": "false" }
+        }
+      ]
+    },
+    {
+      "clientId": "rt-gate-tests",
+      "name": "Gate scripts (password grant, local realm only)",
+      "publicClient": true,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "protocolMappers": [
+        {
+          "name": "rt-api audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "config": { "included.custom.audience": "rt-api", "access.token.claim": "true", "id.token.claim": "false" }
+        }
+      ]
+    }
+  ],
+  "users": [
+    {
+      "username": "author.ar",
+      "enabled": true,
+      "firstName": "سارة",
+      "lastName": "المؤلفة",
+      "email": "author.ar@example.test",
+      "emailVerified": true,
+      "credentials": [{ "type": "password", "value": "local-poc-only", "temporary": false }]
+    },
+    {
+      "username": "author.en",
+      "enabled": true,
+      "firstName": "Sam",
+      "lastName": "Author",
+      "email": "author.en@example.test",
+      "emailVerified": true,
+      "credentials": [{ "type": "password", "value": "local-poc-only", "temporary": false }]
+    },
+    {
+      "username": "author.none",
+      "enabled": true,
+      "firstName": "No",
+      "lastName": "Grants",
+      "email": "author.none@example.test",
+      "emailVerified": true,
+      "credentials": [{ "type": "password", "value": "local-poc-only", "temporary": false }]
+    }
+  ]
+}

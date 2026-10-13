@@ -4,6 +4,11 @@
 # See "Architecture/Developer Setup & Pipelines" in Paca for the full guide.
 # Several agents share one Docker host, so each workspace sets COMPOSE_PROJECT_NAME and the
 # RT_*_PORT variables to its own values; the defaults below are for a single developer.
+#
+# RT-108 PoC branch (throwaway, never merged): adds Keycloak and two replicas of the Reports
+# service. Keycloak is served by nginx under /auth, so the stack still needs only RT_WEB_PORT
+# in the browser. The Reports service needs .secrets/Reports__Database__ConnectionString (the
+# API's connection string with Database=ReportingToolReports).
 name: reporting-tool
 
 services:
@@ -49,14 +54,72 @@ services:
     ports:
       - "${RT_API_PORT:-5080}:8080"
 
+  # D-17: the local OpenID Connect provider, behind nginx at /auth. The issuer is fixed to the
+  # browser-facing URL; back-channel URLs follow the caller, so containers use keycloak:8080.
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.8.0
+    command: ["start-dev", "--import-realm"]
+    environment:
+      KC_HOSTNAME: http://localhost:${RT_WEB_PORT:-8080}/auth
+      KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
+      KC_HTTP_RELATIVE_PATH: /auth
+      KC_HTTP_ENABLED: "true"
+      KC_HEALTH_ENABLED: "true"
+      # Read by the realm import (poc/keycloak) for the SPA's redirect URIs and web origin.
+      RT_PUBLIC_URL: http://localhost:${RT_WEB_PORT:-8080}
+    volumes:
+      - ./poc/keycloak:/opt/keycloak/data/import:ro
+    healthcheck:
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/9000 && printf 'GET /auth/health/ready HTTP/1.0\r\n\r\n' >&3 && grep -q UP <&3"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+
+  # RT-108: designer API, Query-service stand-in, template store and render jobs. Two replicas
+  # behind nginx for gate G5; a 2 GB limit so gate G4 proves memory stays inside it.
+  reports:
+    build:
+      context: .
+      dockerfile: src/Services/ReportingTool.Reports/Dockerfile
+    image: ${COMPOSE_PROJECT_NAME:-reporting-tool}-reports:local
+    # On the very first start both replicas try to CREATE DATABASE; the loser exits with SQL
+    # error 1801 and the restart then finds the database (finding for the Platform, RT-106).
+    restart: on-failure
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      Auth__Issuer: http://localhost:${RT_WEB_PORT:-8080}/auth/realms/reporting-tool
+      Auth__MetadataAddress: http://keycloak:8080/auth/realms/reporting-tool/.well-known/openid-configuration
+    secrets:
+      - source: reports_database_connection_string
+        target: Database__ConnectionString
+    volumes:
+      - report-outputs:/data/outputs
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          memory: 2g
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+
   web:
     build:
       context: src/Web
     image: ${COMPOSE_PROJECT_NAME:-reporting-tool}-web:local
     environment:
       API_UPSTREAM: http://api:8080
+      REPORTS_UPSTREAM: http://reports:8080
+      KEYCLOAK_UPSTREAM: http://keycloak:8080
+      OIDC_AUTHORITY: http://localhost:${RT_WEB_PORT:-8080}/auth/realms/reporting-tool
+      OIDC_CLIENT_ID: rt-web
     depends_on:
       - api
+      - reports
+      - keycloak
     ports:
       - "${RT_WEB_PORT:-8080}:8080"
 
@@ -65,6 +128,9 @@ secrets:
     file: ./.secrets/sql_sa_password
   api_database_connection_string:
     file: ./.secrets/Database__ConnectionString
+  reports_database_connection_string:
+    file: ./.secrets/Reports__Database__ConnectionString
 
 volumes:
   sqlserver-data:
+  report-outputs:

@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <!-- RT-108 proof of concept: the Report service stand-in. It hosts the designer API, a
+       Query-service stand-in over synthetic data, template storage and the render jobs, so the
+       ADR-001 gates can run end to end. Throwaway branch; never merged. -->
+  <PropertyGroup>
+    <RootNamespace>ReportingTool.Reports</RootNamespace>
+    <UserSecretsId>reporting-tool-reports-rt108-poc</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Hangfire.AspNetCore" />
+    <PackageReference Include="Hangfire.SqlServer" />
+    <PackageReference Include="PuppeteerSharp" />
+    <PackageReference Include="ClosedXML" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Platform\ReportingTool.Platform\ReportingTool.Platform.csproj" />
+  </ItemGroup>
+
+  <!-- ECharts runs inside the headless browser for charts; the same file the designer can load. -->
+  <ItemGroup>
+    <Content Include="..\..\..\assets\vendor\echarts\echarts.min.js" Link="assets\echarts.min.js" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

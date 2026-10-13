@@ -1,6 +1,14 @@
 <a class="skip-link" href="#main">Skip to content</a>
 <header class="app-header">
   <span class="product">Reporting Tool</span>
+  <nav class="nav" aria-label="Main">
+    <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Home</a>
+    <a routerLink="/designer" routerLinkActive="active">Report designer</a>
+  </nav>
+  @if (user(); as name) {
+    <span class="user">{{ name }}</span>
+    <button type="button" class="link" (click)="signOut()">Sign out</button>
+  }
 </header>
 <main id="main">
   <router-outlet />

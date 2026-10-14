@@ -39,7 +39,8 @@ public sealed class PlatformEndpointsTests
         Assert.Equal("ReportingTool.Api", info!.Service);
         Assert.Equal("Testing", info.Environment);
         // The milestone version that matches the Git tags (Delivery/00 §5), e.g. "0.1.0-m0+3f2a…".
-        Assert.Matches(@"^\d+\.\d+\.\d+(-m\d+)?(\+.+)?$", info.Version);
+        // "-m<n>" is required so the SDK default 1.0.0 fails; drop it when v1.0.0 is released.
+        Assert.Matches(@"^\d+\.\d+\.\d+-m\d+(\+.+)?$", info.Version);
         Assert.InRange(info.ServerTimeUtc, before, after);
         Assert.Equal(DateTimeKind.Utc, info.ServerTimeUtc.Kind);
     }

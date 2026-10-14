@@ -81,7 +81,9 @@ services own HTTP; design tokens only in component CSS (`src/Web/STYLE.md`).
 
 - .NET 10 SDK (`global.json`), Node 24 (`src/Web/.nvmrc`), SQL Server 2022 CU27 (one image tag,
   pinned in `compose.yaml` and `ApiFactory.cs`). The app version is `<Version>` in
-  `Directory.Build.props`: the milestone `main` is working towards.
+  `Directory.Build.props`: the milestone `main` is working towards. `/api/system/info` appends the
+  commit; `.git/` is not in the image build context, so Compose needs `RT_SOURCE_REVISION`
+  (`git rev-parse HEAD`) to show it, and shows `+local` without it.
 - Ports: web 8080 (compose), API 5080 (compose and `dotnet run`), Angular dev server 4300, SQL 1433.
   On the shared agent machine each workspace overrides them with `RT_WEB_PORT`, `RT_API_PORT` and
   `RT_SQL_PORT`, and names its stack with `COMPOSE_PROJECT_NAME`, so parallel stacks never collide.

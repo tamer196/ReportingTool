@@ -15,8 +15,9 @@ RUN dotnet restore src/Services/ReportingTool.Api/ReportingTool.Api.csproj
 COPY src/Platform/ src/Platform/
 COPY src/Services/ReportingTool.Api/ src/Services/ReportingTool.Api/
 
-# The git commit becomes part of the informational version (/api/system/info), so QA can see
-# that test runs the exact build that was verified in dev.
+# The git commit becomes part of the informational version (/api/system/info), so QA and the
+# demo can see which commit runs. .git/ is not in the build context, so the commit comes in as
+# this argument: CI passes github.sha, compose.yaml passes RT_SOURCE_REVISION.
 ARG SOURCE_REVISION=local
 RUN dotnet publish src/Services/ReportingTool.Api/ReportingTool.Api.csproj \
     --configuration Release --no-restore --output /app \

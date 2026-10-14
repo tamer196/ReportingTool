@@ -1,6 +1,7 @@
 # Local environment: SQL Server + API + web, the same images the pipeline builds.
 #   1. scripts/init-local-secrets.ps1 (or .sh)   once per machine
 #   2. docker compose up --build                 → http://localhost:8080
+#      Set RT_SOURCE_REVISION to `git rev-parse HEAD` first to show the commit (see api.build).
 # See "Architecture/Developer Setup & Pipelines" in Paca for the full guide.
 # Several agents share one Docker host, so each workspace sets COMPOSE_PROJECT_NAME and the
 # RT_*_PORT variables to its own values; the defaults below are for a single developer.
@@ -37,6 +38,11 @@ services:
     build:
       context: .
       dockerfile: src/Services/ReportingTool.Api/Dockerfile
+      # The commit shown by /api/system/info. Compose cannot run git and the build context
+      # excludes .git/, so set RT_SOURCE_REVISION to `git rev-parse HEAD` before building;
+      # without it the version ends in "+local".
+      args:
+        SOURCE_REVISION: ${RT_SOURCE_REVISION:-local}
     image: ${COMPOSE_PROJECT_NAME:-reporting-tool}-api:local
     environment:
       ASPNETCORE_ENVIRONMENT: Development

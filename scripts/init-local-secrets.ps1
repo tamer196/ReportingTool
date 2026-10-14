@@ -55,4 +55,5 @@ dotnet user-secrets set 'Database:ConnectionString' "Server=localhost,$sqlPort;$
 Write-Host 'Local secrets created:'
 Write-Host '  .secrets/sql_sa_password, .secrets/Database__ConnectionString (Docker Compose)'
 Write-Host '  user-secrets Database:ConnectionString (dotnet run of ReportingTool.Api)'
-Write-Host 'Next: docker compose up --build, then open http://localhost:8080'
+$webPort = if ($env:RT_WEB_PORT) { $env:RT_WEB_PORT } else { '8080' }
+Write-Host "Next: docker compose up --build, then open http://localhost:$webPort"

@@ -48,4 +48,4 @@ dotnet user-secrets set "Database:ConnectionString" "Server=localhost,${RT_SQL_P
 echo "Local secrets created:"
 echo "  .secrets/sql_sa_password, .secrets/Database__ConnectionString (Docker Compose)"
 echo "  user-secrets Database:ConnectionString (dotnet run of ReportingTool.Api)"
-echo "Next: docker compose up --build, then open http://localhost:8080"
+echo "Next: docker compose up --build, then open http://localhost:${RT_WEB_PORT:-8080}"

@@ -20,11 +20,13 @@ git clone https://github.com/tamer196/ReportingTool.git reporting-tool
 cd reporting-tool
 dotnet tool restore
 ./scripts/init-local-secrets.ps1     # macOS/Linux: ./scripts/init-local-secrets.sh
+$env:RT_SOURCE_REVISION = git rev-parse HEAD   # macOS/Linux: export RT_SOURCE_REVISION=$(git rev-parse HEAD)
 docker compose up --build
 ```
 
 Open http://localhost:8080. The page lists greetings read from SQL Server through the API; saving
-one writes it back. That is the platform's end-to-end "hello world".
+one writes it back. That is the platform's end-to-end "hello world". The footer shows the version
+and the commit the API was built from; without `RT_SOURCE_REVISION` it ends in `+local`.
 
 The setup script generates a random local SQL Server password into `.secrets/`, which git ignores.
 No secret is ever committed.
@@ -61,6 +63,18 @@ Every change reaches `main` through a pull request. The full process is the Paca
 
 `main` is protected: no direct pushes, no force-pushes, no deletion, merge commits only.
 
+## Milestones and releases
+
+The product is delivered milestone by milestone. Each milestone is an annotated tag
+(`v0.1.0-m0` … `v0.8.0-m7`, then `v1.0.0`) with an entry in [CHANGELOG.md](CHANGELOG.md), release
+notes in [docs/releases/](docs/releases/) and a
+[GitHub Release](https://github.com/tamer196/ReportingTool/releases). `<Version>` in
+`Directory.Build.props` names the milestone `main` is working towards, and
+`/api/system/info` shows it with the commit, for example `0.1.0-m0+3f2a…`. Builds on the host
+read the commit from git; Docker Compose takes it from `RT_SOURCE_REVISION` (see Quick start) and
+shows `+local` when it is not set. The rules are in Paca,
+*Delivery/00 - Milestones & Git Release Plan* §5.
+
 ## Layout
 
 ```
@@ -71,6 +85,7 @@ src/Web                               Angular app and its nginx image
 tests/                                .NET unit and integration tests
 compose.yaml, scripts/                local environment
 .github/                              CI, build-only CD, pull request template, Dependabot
+CHANGELOG.md, docs/releases/          one entry and one release-notes file per milestone tag
 ```
 
 Coding conventions for this repository are in [CLAUDE.md](CLAUDE.md) and

@@ -17,8 +17,8 @@ namespace ReportingTool.Api.Tests;
 /// </summary>
 public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
 {
-    /// <summary>Same SQL Server version as docker-compose.yml, so local and CI match.</summary>
-    private const string SqlServerImage = "mcr.microsoft.com/mssql/server:2022-latest";
+    /// <summary>Same pinned SQL Server image as compose.yaml, so tests and the stack match.</summary>
+    private const string SqlServerImage = "mcr.microsoft.com/mssql/server:2022-CU27-ubuntu-22.04";
 
     private readonly MsSqlContainer _sql = new MsSqlBuilder(SqlServerImage).Build();
 

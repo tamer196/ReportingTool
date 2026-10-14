@@ -9,7 +9,7 @@
       user-secrets Database:ConnectionString for 'dotnet run' of the API against localhost:1433
 
     .secrets/ is gitignored and user-secrets live outside the repository, so nothing generated
-    here can be committed. Cloud environments get their secrets from the vault instead.
+    here can be committed.
 
     Works in Windows PowerShell 5.1 and PowerShell 7.
 
@@ -55,4 +55,5 @@ dotnet user-secrets set 'Database:ConnectionString' "Server=localhost,$sqlPort;$
 Write-Host 'Local secrets created:'
 Write-Host '  .secrets/sql_sa_password, .secrets/Database__ConnectionString (Docker Compose)'
 Write-Host '  user-secrets Database:ConnectionString (dotnet run of ReportingTool.Api)'
-Write-Host 'Next: docker compose up --build, then open http://localhost:8080'
+$webPort = if ($env:RT_WEB_PORT) { $env:RT_WEB_PORT } else { '8080' }
+Write-Host "Next: docker compose up --build, then open http://localhost:$webPort"

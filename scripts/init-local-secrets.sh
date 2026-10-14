@@ -7,7 +7,7 @@
 #   user-secrets Database:ConnectionString for `dotnet run` of the API against localhost:1433
 #
 # .secrets/ is gitignored and user-secrets live outside the repository, so nothing generated
-# here can be committed. Cloud environments get their secrets from the vault instead.
+# here can be committed.
 #
 # Usage: scripts/init-local-secrets.sh [--force]
 #   --force  replace existing secrets. The SQL Server volume keeps the old SA password, so run
@@ -27,7 +27,14 @@ mkdir -p "$secrets_dir"
 
 # 24 random characters that need no escaping in a connection string or shell, plus a fixed
 # suffix so SQL Server's complexity policy (3 of 4 character classes) always passes.
-password="$(LC_ALL=C tr -dc 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789' < /dev/urandom | head -c 24)-Rt7"
+# tr reads a finite sample: piping /dev/urandom straight into `head` kills tr with SIGPIPE,
+# which pipefail turns into a failed script. 4096 bytes leave about 900 usable characters.
+random="$(LC_ALL=C tr -dc 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789' < <(head -c 4096 /dev/urandom))"
+if (( ${#random} < 24 )); then
+  echo "Could not generate a password, run the script again." >&2
+  exit 1
+fi
+password="${random:0:24}-Rt7"
 options="Database=ReportingTool;User Id=sa;Encrypt=True;TrustServerCertificate=True"
 
 # printf without a newline: the configuration key-per-file provider would keep it in the value.
@@ -41,4 +48,4 @@ dotnet user-secrets set "Database:ConnectionString" "Server=localhost,${RT_SQL_P
 echo "Local secrets created:"
 echo "  .secrets/sql_sa_password, .secrets/Database__ConnectionString (Docker Compose)"
 echo "  user-secrets Database:ConnectionString (dotnet run of ReportingTool.Api)"
-echo "Next: docker compose up --build, then open http://localhost:8080"
+echo "Next: docker compose up --build, then open http://localhost:${RT_WEB_PORT:-8080}"

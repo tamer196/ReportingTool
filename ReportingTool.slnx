@@ -10,5 +10,6 @@
   <Folder Name="/tests/">
     <Project Path="tests/ReportingTool.Api.Tests/ReportingTool.Api.Tests.csproj" />
     <Project Path="tests/ReportingTool.Platform.Tests/ReportingTool.Platform.Tests.csproj" />
+    <Project Path="tests/ReportingTool.Reports.Tests/ReportingTool.Reports.Tests.csproj" />
   </Folder>
 </Solution>

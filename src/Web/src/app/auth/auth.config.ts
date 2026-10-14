@@ -24,7 +24,9 @@ export function oidcConfigLoader(http: HttpClient): StsConfigLoader {
         clientId: runtime.clientId,
         redirectUrl: window.location.origin,
         postLogoutRedirectUri: window.location.origin,
-        scope: 'openid profile offline_access',
+        // No offline_access: a browser must not hold long-lived offline tokens. The refresh
+        // token stays bound to the Keycloak session, so signing out there ends it here too.
+        scope: 'openid profile',
         responseType: 'code',
         silentRenew: true,
         useRefreshToken: true,

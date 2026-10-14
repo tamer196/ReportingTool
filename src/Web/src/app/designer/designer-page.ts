@@ -7,7 +7,7 @@ import {
 } from '@angular/cdk/drag-drop';
 import { HttpErrorResponse } from '@angular/common/http';
 import { NgTemplateOutlet } from '@angular/common';
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, Injector, afterNextRender, computed, inject, signal } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
 import {
@@ -63,6 +63,7 @@ const HISTORY_LIMIT = 100;
 export class DesignerPage {
   private readonly api = inject(ReportsApiService);
   private readonly sanitizer = inject(DomSanitizer);
+  private readonly injector = inject(Injector);
   private undoStack: ReportDefinition[] = [];
   private redoStack: ReportDefinition[] = [];
   private objectUrl: string | null = null;
@@ -291,7 +292,7 @@ export class DesignerPage {
       `${COMPONENT_LABELS[type]} added at position ${index + 1} of ${this.layout().body.length + 1}.`,
     );
     this.selection.set({ area: 'body', id: component.id });
-    queueMicrotask(() => document.getElementById(`comp-${component.id}`)?.focus());
+    this.focusAfterRender(`comp-${component.id}`);
   }
 
   protected dropOnBody(event: CdkDragDrop<BodyComponent[]>): void {
@@ -316,7 +317,7 @@ export class DesignerPage {
         (d) => moveItemInArray(d.layout.body, index, to),
         `${describe(component)} moved to position ${to + 1} of ${last + 1}.`,
       );
-      queueMicrotask(() => document.getElementById(`comp-${component.id}`)?.focus());
+      this.focusAfterRender(`comp-${component.id}`);
     } else if (event.key === 'Delete') {
       event.preventDefault();
       this.removeComponent(component);
@@ -412,7 +413,7 @@ export class DesignerPage {
       `Text added to the ${band === 'pageHeader' ? 'page header' : 'page footer'}.`,
     );
     this.selection.set({ area: band, id: item.id });
-    queueMicrotask(() => document.getElementById(`item-${item.id}`)?.focus());
+    this.focusAfterRender(`item-${item.id}`);
   }
 
   protected selectBandItem(band: BandName, item: BandItem): void {
@@ -583,6 +584,14 @@ export class DesignerPage {
   private syncHistory(): void {
     this.canUndo.set(this.undoStack.length > 0);
     this.canRedo.set(this.redoStack.length > 0);
+  }
+
+  /**
+   * Moves the focus to an element once Angular has rendered it. A microtask runs before the
+   * zoneless change detection, so a just-added component would not exist yet (found by G6).
+   */
+  private focusAfterRender(id: string): void {
+    afterNextRender(() => document.getElementById(id)?.focus(), { injector: this.injector });
   }
 
   private announce(message: string): void {

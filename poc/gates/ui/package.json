@@ -1,0 +1,13 @@
+{
+  "name": "rt108-ui-walkthrough",
+  "private": true,
+  "type": "module",
+  "description": "RT-108 gates G2 and G6 (throwaway PoC). puppeteer-core: Apache-2.0; axe-core: MPL-2.0, test tool only.",
+  "scripts": {
+    "walkthrough": "node walkthrough.mjs"
+  },
+  "dependencies": {
+    "axe-core": "4.14.0",
+    "puppeteer-core": "25.13.0"
+  }
+}

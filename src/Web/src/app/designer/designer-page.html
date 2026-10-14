@@ -166,7 +166,7 @@
                       @if (asTable(c).title) {
                         <div class="t-title">{{ asTable(c).title }}</div>
                       }
-                      <table class="t">
+                      <table class="t" aria-hidden="true">
                         <thead>
                           <tr>
                             @for (col of asTable(c).columns; track col.field) {
@@ -206,7 +206,7 @@
                     }
                     @case ('kpi') {
                       <div class="kpi">
-                        <div class="v">123,456.00</div>
+                        <div class="v" aria-hidden="true">123,456.00</div>
                         <div class="l">{{ asKpi(c).label }}</div>
                       </div>
                     }
@@ -217,7 +217,7 @@
                 </div>
               </div>
             } @empty {
-              <p class="empty">Drop components here, or press a palette button.</p>
+              <p class="empty" role="listitem">Drop components here, or press a palette button.</p>
             }
           </div>
           <ng-container *ngTemplateOutlet="bandTpl; context: { $implicit: 'pageFooter' }" />

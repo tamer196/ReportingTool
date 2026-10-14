@@ -96,8 +96,14 @@ public sealed class ReportsDbContext : DbContext
         DatasetField F(string key, string label, string labelAr, string type, FieldVisibility visibility = FieldVisibility.Visible) =>
             new()
             {
-                DatasetId = ClientTransactionsDataset, FieldKey = key, Label = label, LabelAr = labelAr,
-                DataType = type, SourceColumn = key, Visibility = visibility, Ordinal = ++ordinal,
+                DatasetId = ClientTransactionsDataset,
+                FieldKey = key,
+                Label = label,
+                LabelAr = labelAr,
+                DataType = type,
+                SourceColumn = key,
+                Visibility = visibility,
+                Ordinal = ++ordinal,
             };
 
         return

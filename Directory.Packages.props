@@ -36,6 +36,9 @@
          Apache-2.0; 2.0 and later are under the Six Labors Split License, which charges companies
          above US$1M revenue. Never raise this pin. -->
     <PackageVersion Include="SixLabors.Fonts" Version="1.0.1" />
+    <!-- Security pin: Hangfire.Core accepts Newtonsoft.Json >= 11.0.1, and NuGet picks that
+         lowest version, which has a high-severity advisory (GHSA-5crp-9r3c-p9vr). MIT. -->
+    <PackageVersion Include="Newtonsoft.Json" Version="13.0.4" />
   </ItemGroup>
 
   <ItemGroup Label="Tests">

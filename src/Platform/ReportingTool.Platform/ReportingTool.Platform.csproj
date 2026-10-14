@@ -19,6 +19,15 @@
     <PackageReference Include="Serilog.Expressions" />
   </ItemGroup>
 
+  <!-- Security pin, not used directly: EF Core's Microsoft.Data.SqlClient 6.1.7 pulls in
+       System.Security.Cryptography.Pkcs 9.0.11, which has CVE-2026-84008 (high) and
+       CVE-2026-70162 (moderate). Referencing the patched version here lifts it in every project
+       that references Platform. Drop it once `dotnet nuget why` shows SqlClient bringing a
+       patched version on its own. -->
+  <ItemGroup>
+    <PackageReference Include="System.Security.Cryptography.Pkcs" />
+  </ItemGroup>
+
   <ItemGroup>
     <InternalsVisibleTo Include="ReportingTool.Platform.Tests" />
   </ItemGroup>

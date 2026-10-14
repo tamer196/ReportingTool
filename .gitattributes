@@ -1,7 +1,9 @@
 # Line endings: the repository stores LF. Windows-only scripts check out as CRLF; everything
 # else, including shell scripts, checks out as LF on every OS so containers can run it.
 * text=auto eol=lf
-*.{cmd,bat} text eol=crlf
+# One pattern per extension: gitattributes has no brace expansion, so *.{cmd,bat} matches nothing.
+*.cmd text eol=crlf
+*.bat text eol=crlf
 *.ps1 text eol=crlf
 *.sh text eol=lf
 

@@ -64,6 +64,8 @@ jobs:
           name: .NET test results
           path: TestResults/*.trx
           reporter: dotnet-trx
+          # v2 defaults to the job summary only; this makes it a check on the pull request.
+          use-actions-summary: false
 
       - name: Upload test results and coverage
         if: ${{ !cancelled() }}

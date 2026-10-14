@@ -147,7 +147,7 @@ try {
     }
     Assert-That ($code -ne 0) 'up refuses a port block that is in use'
     Assert-That (-not (Test-Path $StateDir)) '... and creates nothing'
-    Assert-That ((Get-DockerLines @('container', 'ls', '--all', '--quiet', '--filter', "label=com.docker.compose.project=$Project")).Count -eq 0) '... and starts no container'
+    Assert-That (@(Get-DockerLines @('container', 'ls', '--all', '--quiet', '--filter', "label=com.docker.compose.project=$Project")).Count -eq 0) '... and starts no container'
 
     Write-Host 'Up'
     $code = Invoke-Tool @('up', $sha, '-PortBase', [string]$PortBase, '-AnyCommit', '-NoFetch')
@@ -158,12 +158,14 @@ try {
 
     Write-Host 'Isolation'
     $internalNetwork = "${Project}_qa-internal"
-    $containers = Get-DockerLines @('container', 'ls', '--filter', "label=com.docker.compose.project=$Project",
-        '--format', '{{.Label "com.docker.compose.service"}}|{{.Ports}}|{{.Networks}}')
+    # JSON rather than a Go template: Windows PowerShell 5.1 can't pass the template's quotes.
+    $containers = @(Get-DockerLines @('container', 'ls', '--filter', "label=com.docker.compose.project=$Project",
+        '--format', 'json') | ForEach-Object { $_ | ConvertFrom-Json })
     Assert-That ($containers.Count -ge 4) "$($containers.Count) containers are running"
-    foreach ($line in $containers) {
-        $service, $ports, $networks = $line -split '\|', 3
-        $published = @($ports -split ',\s*' | Where-Object { $_ -match '->' })
+    foreach ($container in $containers) {
+        $service = ([regex]::Match($container.Labels, 'com\.docker\.compose\.service=([^,]+)')).Groups[1].Value
+        $networks = $container.Networks
+        $published = @($container.Ports -split ',\s*' | Where-Object { $_ -match '->' })
         if ($service -eq 'qa-gateway') {
             Assert-That ($published.Count -gt 0) 'the gateway publishes the ports'
             foreach ($mapping in $published) {
@@ -175,11 +177,11 @@ try {
             Assert-That ($networks -eq $internalNetwork) "$service is on the internal network only"
         }
     }
-    $internal = (Get-DockerLines @('network', 'inspect', $internalNetwork, '--format', '{{.Internal}}'))[0]
+    $internal = @(Get-DockerLines @('network', 'inspect', $internalNetwork, '--format', '{{.Internal}}'))[0]
     Assert-That ($internal -eq 'true') "$internalNetwork is an internal network (no route out)"
-    $sqlContainer = (Get-DockerLines @('container', 'ls', '--quiet', '--filter', "label=com.docker.compose.project=$Project",
+    $sqlContainer = @(Get-DockerLines @('container', 'ls', '--quiet', '--filter', "label=com.docker.compose.project=$Project",
         '--filter', 'label=com.docker.compose.service=sqlserver'))[0]
-    $egress = (Get-DockerLines @('exec', $sqlContainer, 'bash', '-c',
+    $egress = @(Get-DockerLines @('exec', $sqlContainer, 'bash', '-c',
         "timeout 5 bash -c 'exec 3<>/dev/tcp/1.1.1.1/443' 2>/dev/null && echo open || echo blocked"))[-1]
     Assert-That ($egress -eq 'blocked') 'SQL Server cannot open a connection to the internet'
 
@@ -214,9 +216,9 @@ try {
         if ($kind -eq 'container') {
             $listArguments = @('container', 'ls', '--all', '--quiet', '--filter', "label=com.docker.compose.project=$Project")
         }
-        Assert-That ((Get-DockerLines $listArguments).Count -eq 0) "no $kind of $Project is left"
+        Assert-That (@(Get-DockerLines $listArguments).Count -eq 0) "no $kind of $Project is left"
     }
-    Assert-That ((Get-DockerLines @('image', 'ls', '--quiet', "$Project-*")).Count -eq 0) "no image of $Project is left"
+    Assert-That (@(Get-DockerLines @('image', 'ls', '--quiet', "$Project-*")).Count -eq 0) "no image of $Project is left"
     Assert-That (-not (Test-Path $StateDir)) "no .qa-env/$Name folder is left"
     $code = Invoke-Tool @('status')
     Assert-That ($code -ne 0) 'status reports that there is no environment'

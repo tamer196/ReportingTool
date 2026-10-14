@@ -34,7 +34,7 @@ jobs:
       contents: read
       checks: write # publish the test report as a check on the pull request
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-dotnet@v6
         with:
@@ -83,7 +83,7 @@ jobs:
       run:
         working-directory: src/Web
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-node@v5
         with:
@@ -110,7 +110,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       # Vulnerable dependencies (npm lock file), committed secrets, and Dockerfile
       # misconfigurations. .NET packages are audited by NuGet during restore in the backend job.

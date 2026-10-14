@@ -9,7 +9,7 @@
       user-secrets Database:ConnectionString for 'dotnet run' of the API against localhost:1433
 
     .secrets/ is gitignored and user-secrets live outside the repository, so nothing generated
-    here can be committed. Cloud environments get their secrets from the vault instead.
+    here can be committed.
 
     Works in Windows PowerShell 5.1 and PowerShell 7.
 

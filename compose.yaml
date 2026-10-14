@@ -8,7 +8,9 @@ name: reporting-tool
 
 services:
   sqlserver:
-    image: mcr.microsoft.com/mssql/server:2022-latest
+    # Pinned to a cumulative update so every clone runs the same engine. Change it deliberately,
+    # together with ApiFactory.cs and the licence inventory (ADR-002 §8).
+    image: mcr.microsoft.com/mssql/server:2022-CU27-ubuntu-22.04
     environment:
       ACCEPT_EULA: "Y"
       MSSQL_PID: Developer
@@ -38,8 +40,8 @@ services:
     image: ${COMPOSE_PROJECT_NAME:-reporting-tool}-api:local
     environment:
       ASPNETCORE_ENVIRONMENT: Development
-    # Mounted at /run/secrets/Database__ConnectionString: the same key-per-file layout the
-    # vault's CSI driver mounts in the cloud.
+    # Mounted at /run/secrets/Database__ConnectionString: one file per key, the layout every
+    # platform secret uses (ADR-002 §5.2).
     secrets:
       - source: api_database_connection_string
         target: Database__ConnectionString

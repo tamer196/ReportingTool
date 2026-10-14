@@ -1,0 +1,63 @@
+<section class="page" aria-labelledby="greetings-title">
+  <h1 id="greetings-title">Hello, Reporting Tool</h1>
+  <p class="lead">This page proves the platform path: Angular → API → SQL Server and back.</p>
+
+  <form class="card add-form" [formGroup]="form" (ngSubmit)="save()">
+    <label for="greeting-message">Message</label>
+    <div class="row">
+      <input
+        id="greeting-message"
+        type="text"
+        formControlName="message"
+        [attr.maxlength]="maxLength"
+        autocomplete="off"
+        [attr.aria-invalid]="message.touched && message.invalid"
+        aria-describedby="greeting-message-help"
+      />
+      <button type="submit" [disabled]="saving()">{{ saving() ? 'Saving…' : 'Save greeting' }}</button>
+    </div>
+    <p id="greeting-message-help" class="hint" aria-live="polite">
+      @if (message.touched && message.invalid) {
+        <span class="error">Enter a message of up to {{ maxLength }} characters.</span>
+      } @else if (saveError()) {
+        <span class="error">The greeting could not be saved. Try again.</span>
+      } @else {
+        Up to {{ maxLength }} characters.
+      }
+    </p>
+  </form>
+
+  <section class="card" aria-labelledby="greetings-list-title">
+    <h2 id="greetings-list-title">Latest greetings</h2>
+    @switch (greetingsApi.status()) {
+      @case ('loading') {
+        <p role="status">Loading…</p>
+      }
+      @case ('error') {
+        <p role="alert" class="error">The API could not be reached.</p>
+      }
+      @default {
+        <ul class="greetings">
+          @for (greeting of greetingsApi.greetings(); track greeting.id) {
+            <li>
+              <span class="message">{{ greeting.message }}</span>
+              <time [attr.datetime]="greeting.createdAtUtc">
+                {{ greeting.createdAtUtc | date: 'yyyy-MM-dd HH:mm:ss' : 'UTC' }} UTC
+              </time>
+            </li>
+          } @empty {
+            <li class="empty">No greetings yet.</li>
+          }
+        </ul>
+      }
+    }
+  </section>
+
+  <footer class="build">
+    @if (systemInfo.info(); as info) {
+      {{ info.service }} {{ info.version }} · {{ info.environment }}
+    } @else {
+      API build unknown
+    }
+  </footer>
+</section>

@@ -1,0 +1,135 @@
+# CI: runs on every pull request to main (RT-106 AC 1) and again on each merge to main, which
+# keeps the README badge current. Every job reports a status check on the pull request; make
+# them required in the ruleset for main. The manual CD workflow calls this same workflow first.
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  DOTNET_NOLOGO: "true"
+  DOTNET_CLI_TELEMETRY_OPTOUT: "true"
+  NG_CLI_ANALYTICS: "false"
+  # Pinned by digest as well as tag: a re-pushed tag can't swap the scanner under us.
+  TRIVY_IMAGE: aquasec/trivy:0.75.0@sha256:af6acf9a6b85dfe389a1941505c0ce9efef52a4719635e1a962f022a3d855daa
+
+jobs:
+  backend:
+    name: Services (.NET)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+      checks: write # publish the test report as a check on the pull request
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-dotnet@v5
+        with:
+          global-json-file: global.json
+
+      - name: Restore (NuGet audit fails CI on a vulnerable package)
+        run: dotnet restore ReportingTool.slnx
+
+      - name: Lint (formatting, code style, naming)
+        run: dotnet format ReportingTool.slnx --verify-no-changes --no-restore
+
+      - name: Build (warnings are errors in CI)
+        run: dotnet build ReportingTool.slnx --configuration Release --no-restore
+
+      # The API tests start SQL Server in Docker (Testcontainers); the hosted runner has Docker.
+      - name: Test
+        run: >
+          dotnet test --solution ReportingTool.slnx --configuration Release --no-build
+          --results-directory TestResults
+          --report-trx
+          --coverage --coverage-output-format cobertura
+
+      - name: Test report
+        if: ${{ !cancelled() }}
+        uses: dorny/test-reporter@v2
+        with:
+          name: .NET test results
+          path: TestResults/*.trx
+          reporter: dotnet-trx
+          # v2 defaults to the job summary only; this makes it a check on the pull request.
+          use-actions-summary: false
+
+      - name: Upload test results and coverage
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: dotnet-test-results
+          path: TestResults/
+          retention-days: 14
+
+  frontend:
+    name: Front end (Angular)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: src/Web
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: src/Web/.nvmrc
+          cache: npm
+          cache-dependency-path: src/Web/package-lock.json
+
+      - run: npm ci
+
+      - name: Lint (ESLint, including template accessibility rules)
+        run: npm run lint
+
+      - name: Test
+        run: npm run test:ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Audit runtime dependencies
+        run: npm audit --omit=dev --audit-level=high
+
+  security:
+    name: Security scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+
+      # Vulnerable dependencies (npm lock file), committed secrets, and Dockerfile
+      # misconfigurations. .NET packages are audited by NuGet during restore in the backend job.
+      - name: Scan repository (vulnerabilities, secrets, misconfigurations)
+        run: >
+          docker run --rm -v "$PWD:/repo" -w /repo "$TRIVY_IMAGE"
+          fs --scanners vuln,secret,misconfig --severity HIGH,CRITICAL --ignore-unfixed
+          --exit-code 1 --no-progress .
+
+      # Building both images on every pull request also proves the Dockerfiles still work.
+      - name: Build images
+        run: |
+          docker build --file src/Services/ReportingTool.Api/Dockerfile \
+            --build-arg SOURCE_REVISION=${{ github.sha }} --tag reporting-tool-api:ci .
+          docker build --tag reporting-tool-web:ci src/Web
+
+      - name: Scan images
+        run: |
+          for image in reporting-tool-api:ci reporting-tool-web:ci; do
+            docker run --rm -v /var/run/docker.sock:/var/run/docker.sock "$TRIVY_IMAGE" \
+              image --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1 --no-progress "$image"
+          done

@@ -1,0 +1,48 @@
+# Serves the Angular build and forwards /api/ to the API, so the browser only ever talks to one
+# origin (no CORS). The nginx image renders this template at start-up and substitutes only the
+# variables present in the container environment: ${API_UPSTREAM} (not a secret, e.g.
+# http://api:8080). nginx's own variables ($host, $uri, ...) are left alone.
+server {
+    listen 8080;
+    server_name _;
+    root /usr/share/nginx/html;
+    server_tokens off;
+
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-Frame-Options "DENY" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+
+    location = /healthz {
+        access_log off;
+        default_type text/plain;
+        return 200 "Healthy";
+    }
+
+    location /api/ {
+        proxy_pass ${API_UPSTREAM};
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # index.html must never be cached, so a new deployment is picked up on the next load.
+    # Hashed bundles can be cached for a year.
+    location = /index.html {
+        add_header Cache-Control "no-cache" always;
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header X-Frame-Options "DENY" always;
+        add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    }
+
+    location ~* \.(?:js|css|woff2?|ico|png|svg)$ {
+        add_header Cache-Control "public, max-age=31536000, immutable" always;
+        add_header X-Content-Type-Options "nosniff" always;
+        try_files $uri =404;
+    }
+
+    # Client-side routes fall back to the app.
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+}

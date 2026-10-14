@@ -1,0 +1,58 @@
+# CD (build only): nothing deploys anywhere. The admin decided on 2026-10-14 that everything
+# runs locally with Docker (ADR-002, D-15), so this workflow only runs when started by hand. It
+# runs the full CI, then builds each image once, tagged with the commit SHA, and pushes nothing:
+# no registry, no environment, no credentials.
+#
+# CI already builds and scans both images on every pull request and merge. Publish and deploy
+# stages come back only if the technology review moves hosting off the local machine (upgrade
+# candidate U3 in Delivery/03).
+name: CD (build only)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cd-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  ci:
+    name: CI
+    uses: ./.github/workflows/ci.yml
+    permissions:
+      contents: read
+      checks: write
+
+  build:
+    name: Build images
+    needs: ci
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    strategy:
+      matrix:
+        include:
+          - name: api
+            context: .
+            dockerfile: src/Services/ReportingTool.Api/Dockerfile
+          - name: web
+            context: src/Web
+            dockerfile: src/Web/Dockerfile
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
+          build-args: SOURCE_REVISION=${{ github.sha }}
+          push: false
+          tags: reporting-tool-${{ matrix.name }}:${{ github.sha }}
+          cache-from: type=gha,scope=${{ matrix.name }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.name }}

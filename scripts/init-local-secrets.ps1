@@ -16,9 +16,15 @@
 .PARAMETER Force
     Replace existing secrets. The SQL Server volume keeps the old SA password, so run
     'docker compose down -v' first (this deletes the local database).
+
+.PARAMETER ComposeOnly
+    Write only the Docker Compose secrets in .secrets/ and leave user-secrets alone. User-secrets
+    belong to the Windows user, not to the clone, so a second copy of the repository (the QA
+    environment of scripts/qa-env.ps1) would otherwise overwrite your development clone's
+    connection string.
 #>
 [CmdletBinding()]
-param([switch]$Force)
+param([switch]$Force, [switch]$ComposeOnly)
 
 $ErrorActionPreference = 'Stop'
 
@@ -48,6 +54,11 @@ function Write-Secret([string]$name, [string]$value) {
 $options = 'Database=ReportingTool;User Id=sa;Encrypt=True;TrustServerCertificate=True'
 Write-Secret 'sql_sa_password' $password
 Write-Secret 'Database__ConnectionString' "Server=sqlserver,1433;$options;Password=$password"
+
+if ($ComposeOnly) {
+    Write-Host 'Docker Compose secrets created in .secrets/ (user-secrets left unchanged).'
+    exit 0
+}
 
 $sqlPort = if ($env:RT_SQL_PORT) { $env:RT_SQL_PORT } else { '1433' }
 dotnet user-secrets set 'Database:ConnectionString' "Server=localhost,$sqlPort;$options;Password=$password" --project $apiProject | Out-Null

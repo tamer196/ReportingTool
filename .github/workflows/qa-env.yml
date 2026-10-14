@@ -1,0 +1,44 @@
+# QA environment (RT-121): the end-to-end test of scripts/qa-env.ps1, the stack QA tests main
+# on. It starts the pull request's commit the way QA starts a merge commit, then checks the smoke
+# test, the isolation (ports on 127.0.0.1 only, no route out of the app network), reset to the
+# seeded data and a clean down (tests/qa-env/qa-env.e2e.ps1).
+#
+# It runs only when something the QA environment is built from changes, so it isn't a required
+# check: a path-filtered workflow doesn't report on every pull request.
+name: QA environment
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - compose.yaml
+      - scripts/**
+      - tests/qa-env/**
+      - "**/Dockerfile"
+      - src/Web/nginx/**
+      - src/Services/**/appsettings.Test.json
+      - .github/workflows/qa-env.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: qa-env-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e:
+    name: QA environment (end-to-end)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          # The tool checks commits against origin/main.
+          fetch-depth: 0
+
+      # The runner's PowerShell 7; QA runs the same scripts in Windows PowerShell 5.1.
+      - name: Up, smoke check, isolation, fingerprint, reset, down
+        shell: pwsh
+        run: ./tests/qa-env/qa-env.e2e.ps1 -Commit HEAD

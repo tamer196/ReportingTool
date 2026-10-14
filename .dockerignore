@@ -10,5 +10,6 @@
 .git/
 .github/
 .secrets/
+.qa-env/
 **/appsettings.Development.json
 **/*.user

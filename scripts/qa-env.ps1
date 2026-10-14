@@ -140,10 +140,6 @@ function Invoke-Git([string[]]$Arguments) {
     Invoke-Native 'git' (@('-C', $RepoRoot) + $Arguments)
 }
 
-function Get-GitOutput([string[]]$Arguments) {
-    return (Get-NativeOutput 'git' (@('-C', $RepoRoot) + $Arguments)).Trim()
-}
-
 function Assert-Prerequisites {
     $null = Get-NativeOutput 'git' @('--version')
     $saved = $ErrorActionPreference
@@ -622,7 +618,7 @@ function Show-Environment($State) {
     Write-Host ''
     Write-Host "QA environment '$Name' (Compose project $Project)"
     Write-Host "  Commit:  $($State.commit)"
-    Write-Host "  Started: $($State.startedUtc) (UTC)"
+    Write-Host "  Started: $($State.startedUtc)"
     $web = Get-Endpoint $State 'web' 8080
     if ($web) {
         Write-Host "  Open:    http://127.0.0.1:$($web.port)"
@@ -715,7 +711,8 @@ function Start-Environment([string]$Sha, [int]$Base) {
         project    = $Project
         commit     = $Sha
         portBase   = $Base
-        startedUtc = [DateTime]::UtcNow.ToString('yyyy-MM-ddTHH:mm:ssZ')
+        # Not ISO 8601: PowerShell 7's ConvertFrom-Json would turn that into a local DateTime.
+        startedUtc = [DateTime]::UtcNow.ToString('yyyy-MM-dd HH:mm:ss') + ' UTC'
         variables  = [pscustomobject]$variables
         endpoints  = @()
         images     = @()

@@ -235,3 +235,5 @@ finally {
         $null = Invoke-Tool @('down')
     }
 }
+# The last tool run above was meant to fail; its exit code mustn't become the test's.
+exit 0

@@ -1,10 +1,12 @@
-# CI: runs on every pull request to main (RT-106 AC 1). Every job reports a status check on the
-# pull request; make them required in the branch protection rules for main. The CD workflow
-# calls this same workflow on each merge, so main is never deployed without a green CI.
+# CI: runs on every pull request to main (RT-106 AC 1) and again on each merge to main, which
+# keeps the README badge current. Every job reports a status check on the pull request; make
+# them required in the ruleset for main. The manual CD workflow calls this same workflow first.
 name: CI
 
 on:
   pull_request:
+    branches: [main]
+  push:
     branches: [main]
   workflow_call:
   workflow_dispatch:
@@ -20,7 +22,8 @@ env:
   DOTNET_NOLOGO: "true"
   DOTNET_CLI_TELEMETRY_OPTOUT: "true"
   NG_CLI_ANALYTICS: "false"
-  TRIVY_IMAGE: aquasec/trivy:0.75.0
+  # Pinned by digest as well as tag: a re-pushed tag can't swap the scanner under us.
+  TRIVY_IMAGE: aquasec/trivy:0.75.0@sha256:af6acf9a6b85dfe389a1941505c0ce9efef52a4719635e1a962f022a3d855daa
 
 jobs:
   backend:

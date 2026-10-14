@@ -1,6 +1,32 @@
+# Line endings: the repository stores LF. Windows-only scripts check out as CRLF; everything
+# else, including shell scripts, checks out as LF on every OS so containers can run it.
 * text=auto eol=lf
 *.{cmd,bat} text eol=crlf
 *.ps1 text eol=crlf
+*.sh text eol=lf
+
+# Binary files: never normalise or diff as text.
 *.png binary
 *.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
 *.ico binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.otf binary
+*.eot binary
+*.pdf binary
+*.xlsx binary
+*.docx binary
+*.zip binary
+*.gz binary
+*.dll binary
+*.exe binary
+*.nupkg binary
+*.snk binary
+
+# Generated files: collapsed in GitHub diffs and left out of language statistics.
+**/Persistence/Migrations/*.cs linguist-generated=true
+src/Web/package-lock.json linguist-generated=true

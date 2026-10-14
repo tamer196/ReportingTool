@@ -11,11 +11,19 @@ indent_size = 4
 [*.{json,yml,yaml,html,css,scss,ts,js,mjs,cjs,xml,csproj,props,targets,slnx}]
 indent_size = 2
 
+# Same width as src/Web/.prettierrc, so editors and Prettier agree.
+[*.{ts,js,mjs,cjs,html,css,scss}]
+max_line_length = 100
+
 [*.md]
 trim_trailing_whitespace = false
 
-[*.ps1]
+# Matches .gitattributes: Windows-only scripts are CRLF, shell scripts LF.
+[*.{ps1,cmd,bat}]
 end_of_line = crlf
+
+[*.sh]
+end_of_line = lf
 
 [*.cs]
 # Layout

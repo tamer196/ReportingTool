@@ -1,16 +1,35 @@
-# Build output
+# .NET build output
 bin/
 obj/
-TestResults/
 artifacts/
+TestResults/
+*.nupkg
+*.snupkg
+
+# Front end (src/Web keeps its own Angular .gitignore as well)
+node_modules/
+.angular/
+dist/
+out-tsc/
+coverage/
+.eslintcache
+.npm/
 
 # IDE
 .vs/
 .idea/
+*.iml
+.fleet/
 *.user
 *.suo
+*.rsuser
+*.DotSettings.user
+_ReSharper*/
 .vscode/*
 !.vscode/extensions.json
+.history/
+*.swp
+*~
 
 # Logs (the Serilog file sink writes here)
 logs/
@@ -23,13 +42,20 @@ appsettings.Development.json
 !appsettings.Development.example.json
 .secrets/
 .env
+.env.*
+!.env.example
+*.pfx
+*.p12
 
-# Front end
-node_modules/
-.angular/
-dist/
-coverage/
+# Docker: per-machine overrides of compose.yaml
+compose.override.yaml
+compose.override.yml
+docker-compose.override.yml
 
 # OS noise
 Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
 .DS_Store
+._*

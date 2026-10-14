@@ -23,8 +23,10 @@ cd src/Web && npm ci && npm start     # Angular on http://localhost:4300, proxie
 npm run lint && npm run test:ci && npm run build
 ```
 
-Deployment target: Linux containers on Kubernetes (AKS or EKS, decided by ADR-002 / RT-105).
-CI and CD are GitHub Actions (`.github/workflows`).
+Hosting: Phase 1 runs entirely in Docker Compose on one machine (ADR-002, D-15); nothing is
+deployed. The code lives at https://github.com/tamer196/ReportingTool (public): every change
+goes through a pull request to the protected `main`, and GitHub Actions runs CI on each one.
+The repository is public, so never commit secrets, internal hostnames or real client data.
 
 ## Architecture — follow these rules for ALL code in this repo
 
@@ -70,7 +72,7 @@ services own HTTP; design tokens only in component CSS (`src/Web/STYLE.md`).
 | `src/Web` | Angular 21 SPA + nginx image config |
 | `tests/*` | xUnit v3 on Microsoft.Testing.Platform; API tests use Testcontainers SQL Server |
 | `compose.yaml`, `scripts/` | Local environment and local secrets |
-| `.github/workflows` | `ci.yml` (pull requests), `cd.yml` (main → images; deploy stages after ADR-002) |
+| `.github/workflows` | `ci.yml` (pull requests and main), `cd.yml` (manual, builds images only, deploys nothing) |
 
 ## Environment pins & gotchas
 

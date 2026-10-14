@@ -1,10 +1,10 @@
 # Reporting Tool
 
 Web-based drag-and-drop reporting tool (Paca project **RT**). An Angular SPA calls .NET services
-backed by SQL Server; the TDD stack (decision D-12) adds RabbitMQ, Hangfire, Redis and
-Elasticsearch as stories need them. The most important quality attribute is **auditable,
-access-controlled data**: every rule about who may see which data is enforced in the services,
-never only in the UI.
+backed by SQL Server; the TDD stack (decision D-12) adds RabbitMQ, Hangfire, a cache (Valkey)
+and search (OpenSearch) as stories need them (*ADR-002*). The most important quality attribute
+is **auditable, access-controlled data**: every rule about who may see which data is enforced in
+the services, never only in the UI.
 
 Design sources live in Paca, not in this repo: *Architecture/TDD*, *Architecture/Developer
 Setup & Pipelines*, *Business Analysis/10 - PRD & TDD Gap Analysis*.
@@ -27,6 +27,8 @@ Hosting: Phase 1 runs entirely in Docker Compose on one machine (ADR-002, D-15);
 deployed. The code lives at https://github.com/tamer196/ReportingTool (public): every change
 goes through a pull request to the protected `main`, and GitHub Actions runs CI on each one.
 The repository is public, so never commit secrets, internal hostnames or real client data.
+Every component must be free to use today (D-16); add new ones to the licence inventory in
+*ADR-002* §8. Milestone tags and releases follow *Delivery/00 - Milestones & Git Release Plan* §5.
 
 ## Architecture — follow these rules for ALL code in this repo
 
@@ -73,17 +75,20 @@ services own HTTP; design tokens only in component CSS (`src/Web/STYLE.md`).
 | `tests/*` | xUnit v3 on Microsoft.Testing.Platform; API tests use Testcontainers SQL Server |
 | `compose.yaml`, `scripts/` | Local environment and local secrets |
 | `.github/workflows` | `ci.yml` (pull requests and main), `cd.yml` (manual, builds images only, deploys nothing) |
+| `CHANGELOG.md`, `docs/releases/` | One entry and one release-notes file per milestone tag (*Delivery/00* §5) |
 
 ## Environment pins & gotchas
 
-- .NET 10 SDK (`global.json`), Node 24 (`src/Web/.nvmrc`), SQL Server 2022 (compose and tests).
+- .NET 10 SDK (`global.json`), Node 24 (`src/Web/.nvmrc`), SQL Server 2022 CU27 (one image tag,
+  pinned in `compose.yaml` and `ApiFactory.cs`). The app version is `<Version>` in
+  `Directory.Build.props`: the milestone `main` is working towards.
 - Ports: web 8080 (compose), API 5080 (compose and `dotnet run`), Angular dev server 4300, SQL 1433.
   On the shared agent machine each workspace overrides them with `RT_WEB_PORT`, `RT_API_PORT` and
   `RT_SQL_PORT`, and names its stack with `COMPOSE_PROJECT_NAME`, so parallel stacks never collide.
 - `dotnet user-secrets` is per Windows user, so agents on the shared machine share it: prefer
   `docker compose up` (secrets live in this clone's `.secrets/`) over `dotnet run` against SQL.
 - `ASPNETCORE_ENVIRONMENT`: `Development` = a developer machine (including compose);
-  `Dev` and `Test` = the cloud environments; `Testing` = integration tests.
+  `Dev` and `Test` = shared environments (QA's test stack is RT-121); `Testing` = integration tests.
 - Adding a migration: `dotnet ef migrations add <Name> --project src/Services/ReportingTool.Api
   --output-dir Persistence/Migrations` (needs no database; see `DesignTimeReportingDbContextFactory`).
 - The `Greeting` table is the hello-world slice only; remove it once Sprint 1 owns real tables.

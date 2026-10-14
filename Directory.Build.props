@@ -3,6 +3,10 @@
   <!-- Shared by every .NET project in the repo. Per-project csproj files carry only what is
        specific to them (SDK, RootNamespace, references). -->
   <PropertyGroup>
+    <!-- The milestone main is working towards, matching its Git tag without the "v"
+         (Delivery/00 §5): v0.1.0-m0 is built as 0.1.0-m0. The release step bumps it to the next
+         milestone right after tagging. Builds append "+<commit sha>", shown by /api/system/info. -->
+    <Version>0.1.0-m0</Version>
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>

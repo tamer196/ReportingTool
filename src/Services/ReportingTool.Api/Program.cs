@@ -3,7 +3,7 @@ using Serilog;
 // Reporting Tool API: the first deployable .NET service. Its components share one process
 // and one DI container:
 //   HTTP endpoints: /api/greetings (the RT-106 hello-world slice), /api/system/info,
-//                   /health/live, /health/ready
+//                   /api/time-zones, /health/live, /health/ready
 //   DatabaseMigrationHostedService: applies EF Core migrations before traffic (when configured)
 //
 // Two-stage Serilog initialization: a bootstrap logger catches host-build failures,
@@ -40,6 +40,7 @@ try
     if (app.Environment.IsDevelopment())
         app.MapOpenApi();
     app.MapSystemInfoEndpoints();
+    app.MapTimeZoneEndpoints();
     app.MapGreetingEndpoints();
 
     var log = app.Services.GetRequiredService<ILoggerService>();

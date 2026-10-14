@@ -1,0 +1,6 @@
+<time tabindex="0" [attr.datetime]="datetime()" [attr.aria-describedby]="tooltipId">{{
+  text()
+}}</time>
+<span class="tooltip" role="tooltip" [id]="tooltipId" [hidden]="!tooltipShown()">{{
+  utcText()
+}}</span>

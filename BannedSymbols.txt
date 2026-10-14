@@ -4,3 +4,4 @@ P:System.DateTime.UtcNow;Inject TimeProvider and use GetUtcNow() so tests can co
 P:System.DateTimeOffset.Now;BR-14: inject TimeProvider and use GetUtcNow() — local server time must never be stored or compared.
 P:System.DateTimeOffset.UtcNow;Inject TimeProvider and use GetUtcNow() so tests can control time.
 M:System.DateTime.ToLocalTime;BR-14: convert to a user's time zone explicitly with TimeZoneInfo, never the server's local zone.
+P:NodaTime.SystemClock.Instance;Inject TimeProvider and use GetUtcNow() so tests can control time; convert with Instant.FromDateTimeOffset.

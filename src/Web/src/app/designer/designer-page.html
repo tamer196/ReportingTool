@@ -137,83 +137,84 @@
                 [cdkDragData]="c"
                 [cdkDragScale]="zoom()"
               >
-                <div
-                  class="comp"
-                  [id]="'comp-' + c.id"
-                  role="button"
-                  tabindex="0"
-                  [class.selected]="selection()?.id === c.id"
-                  [attr.aria-pressed]="selection()?.id === c.id"
-                  [attr.aria-label]="
-                    describe(c) + ', position ' + (i + 1) + ' of ' + layout().body.length
-                  "
-                  aria-describedby="kbd-help"
-                  (click)="selectComponent(c)"
-                  (keydown)="onComponentKey(i, c, $event)"
-                >
-                  @switch (c.type) {
-                    @case ('text') {
-                      <div
-                        class="c-text"
-                        [style.font-size.pt]="asText(c).style.fontSizePt"
-                        [style.font-weight]="asText(c).style.bold ? 700 : 400"
-                        [style.text-align]="asText(c).style.align"
-                      >
-                        {{ asText(c).text }}
-                      </div>
-                    }
-                    @case ('table') {
-                      @if (asTable(c).title) {
-                        <div class="t-title">{{ asTable(c).title }}</div>
+                <div class="comp" [class.selected]="selection()?.id === c.id">
+                  <button
+                    type="button"
+                    class="comp-hit"
+                    [id]="'comp-' + c.id"
+                    [attr.aria-pressed]="selection()?.id === c.id"
+                    [attr.aria-label]="
+                      describe(c) + ', position ' + (i + 1) + ' of ' + layout().body.length
+                    "
+                    aria-describedby="kbd-help"
+                    (click)="selectComponent(c)"
+                    (keydown)="onComponentKey(i, c, $event)"
+                  ></button>
+                  <div aria-hidden="true">
+                    @switch (c.type) {
+                      @case ('text') {
+                        <div
+                          class="c-text"
+                          [style.font-size.pt]="asText(c).style.fontSizePt"
+                          [style.font-weight]="asText(c).style.bold ? 700 : 400"
+                          [style.text-align]="asText(c).style.align"
+                        >
+                          {{ asText(c).text }}
+                        </div>
                       }
-                      <table class="t" aria-hidden="true">
-                        <thead>
-                          <tr>
-                            @for (col of asTable(c).columns; track col.field) {
-                              <th [style.width.%]="col.widthPct">{{ col.header }}</th>
-                            }
-                          </tr>
-                        </thead>
-                        <tbody>
-                          @if (asTable(c).groupBy) {
-                            <tr class="gh">
-                              <td [attr.colspan]="asTable(c).columns.length">
-                                {{ asTable(c).groupHeader || fieldLabel(asTable(c).groupBy) }}
-                              </td>
-                            </tr>
-                          }
-                          @for (row of [1, 2, 3]; track row) {
+                      @case ('table') {
+                        @if (asTable(c).title) {
+                          <div class="t-title">{{ asTable(c).title }}</div>
+                        }
+                        <table class="t">
+                          <thead>
                             <tr>
                               @for (col of asTable(c).columns; track col.field) {
-                                <td class="placeholder">‹{{ fieldLabel(col.field) }}›</td>
+                                <th [style.width.%]="col.widthPct">{{ col.header }}</th>
                               }
                             </tr>
+                          </thead>
+                          <tbody>
+                            @if (asTable(c).groupBy) {
+                              <tr class="gh">
+                                <td [attr.colspan]="asTable(c).columns.length">
+                                  {{ asTable(c).groupHeader || fieldLabel(asTable(c).groupBy) }}
+                                </td>
+                              </tr>
+                            }
+                            @for (row of [1, 2, 3]; track row) {
+                              <tr>
+                                @for (col of asTable(c).columns; track col.field) {
+                                  <td class="placeholder">‹{{ fieldLabel(col.field) }}›</td>
+                                }
+                              </tr>
+                            }
+                          </tbody>
+                        </table>
+                      }
+                      @case ('chart') {
+                        <div class="t-title">{{ asChart(c).title }}</div>
+                        <div
+                          class="chart-ph"
+                          [style.height.mm]="asChart(c).heightMm"
+                          aria-hidden="true"
+                        >
+                          @for (h of [55, 80, 40, 95, 65]; track $index) {
+                            <span [style.height.%]="h"></span>
                           }
-                        </tbody>
-                      </table>
+                        </div>
+                      }
+                      @case ('kpi') {
+                        <div class="kpi">
+                          <div class="v">123,456.00</div>
+                          <div class="l">{{ asKpi(c).label }}</div>
+                        </div>
+                      }
+                      @case ('pageBreak') {
+                        <div class="pb">{{ labels.pageBreak }}</div>
+                      }
                     }
-                    @case ('chart') {
-                      <div class="t-title">{{ asChart(c).title }}</div>
-                      <div
-                        class="chart-ph"
-                        [style.height.mm]="asChart(c).heightMm"
-                        aria-hidden="true"
-                      >
-                        @for (h of [55, 80, 40, 95, 65]; track $index) {
-                          <span [style.height.%]="h"></span>
-                        }
-                      </div>
-                    }
-                    @case ('kpi') {
-                      <div class="kpi">
-                        <div class="v" aria-hidden="true">123,456.00</div>
-                        <div class="l">{{ asKpi(c).label }}</div>
-                      </div>
-                    }
-                    @case ('pageBreak') {
-                      <div class="pb">{{ labels.pageBreak }}</div>
-                    }
-                  }
+                  </div>
                 </div>
               </div>
             } @empty {

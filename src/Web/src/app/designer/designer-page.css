@@ -183,9 +183,23 @@ button:disabled {
 }
 
 .comp {
+  position: relative;
   padding: 1mm;
   outline: 1px dotted #c3c8d1;
   cursor: grab;
+}
+
+/* Covers the preview and carries the component's name and keys. The preview is decoration:
+   visible text inside a button that its label doesn't contain fails WCAG 2.5.3 (G6). */
+.comp-hit {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: inherit;
 }
 
 .selected {

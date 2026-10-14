@@ -32,17 +32,17 @@ public sealed partial class XlsxReportWriter : IXlsxWriter
             sheet.RightToLeft = ctx.IsRtl;
             sheet.Style.Font.FontName = ctx.IsRtl ? "Noto Sans Arabic" : "Noto Sans";
 
-            sheet.Cell(1, 1).Value = ctx.ReportName;
+            SetText(sheet.Cell(1, 1), ctx.ReportName);
             sheet.Cell(1, 1).Style.Font.SetBold().Font.SetFontSize(14);
-            sheet.Cell(2, 1).Value = string.Join(" · ", ctx.Definition.Parameters
+            SetText(sheet.Cell(2, 1), string.Join(" · ", ctx.Definition.Parameters
                 .Where(p => !string.IsNullOrWhiteSpace(ctx.Parameters.GetValueOrDefault(p.Name)))
-                .Select(p => $"{p.Label}: {ctx.Parameters[p.Name]}"));
+                .Select(p => $"{p.Label}: {ctx.Parameters[p.Name]}")));
 
             for (var c = 0; c < table.Columns.Count; c++)
             {
                 var column = table.Columns[c];
                 var header = sheet.Cell(HeaderRow, c + 1);
-                header.Value = column.Header;
+                SetText(header, column.Header);
                 header.Style.Font.SetBold().Fill.SetBackgroundColor(XLColor.FromHtml("#E8EDF7"));
                 var xlColumn = sheet.Column(c + 1);
                 xlColumn.Width = Math.Max(8, (double)column.WidthPct * 1.3);
@@ -86,10 +86,10 @@ public sealed partial class XlsxReportWriter : IXlsxWriter
                     r++;
                     var groupCell = sheet.Cell(r, 1);
                     // Same group heading as the PDF: "{Field: X}" tokens filled from the group's first row.
-                    groupCell.Value = table.GroupHeader is null
+                    SetText(groupCell, table.GroupHeader is null
                         ? key
                         : FieldTokenRegex().Replace(table.GroupHeader, m =>
-                            at.TryGetValue(m.Groups[1].Value.Trim(), out var i) ? Convert.ToString(row[i], CultureInfo.InvariantCulture) ?? string.Empty : m.Value);
+                            at.TryGetValue(m.Groups[1].Value.Trim(), out var i) ? Convert.ToString(row[i], CultureInfo.InvariantCulture) ?? string.Empty : m.Value));
                     sheet.Range(r, 1, r, table.Columns.Count).Merge().Style.Font.SetBold().Fill.SetBackgroundColor(XLColor.FromHtml("#F3F5F9"));
                 }
 
@@ -111,7 +111,7 @@ public sealed partial class XlsxReportWriter : IXlsxWriter
                         case null:
                             break;
                         default:
-                            cell.Value = Convert.ToString(value, CultureInfo.InvariantCulture);
+                            SetText(cell, Convert.ToString(value, CultureInfo.InvariantCulture));
                             break;
                     }
                 }
@@ -141,6 +141,18 @@ public sealed partial class XlsxReportWriter : IXlsxWriter
 
         sheet.Row(r).Style.Font.SetBold();
         return r;
+    }
+
+    /// <summary>
+    /// Writes author or data text as a text cell, never a formula. A value a spreadsheet would read
+    /// as a formula (it starts with = + - @, tab or CR) also gets Excel's quote prefix, so it stays
+    /// text even when someone edits the cell (doc 09 SEC-08, #31; OWASP CSV injection).
+    /// </summary>
+    private static void SetText(IXLCell cell, string? text)
+    {
+        cell.Value = text ?? string.Empty;
+        if (text is ['=' or '+' or '-' or '@' or '\t' or '\r', ..])
+            cell.Style.IncludeQuotePrefix = true;
     }
 
     [GeneratedRegex(@"\{\s*Field:\s*([^{}]+)\}")]

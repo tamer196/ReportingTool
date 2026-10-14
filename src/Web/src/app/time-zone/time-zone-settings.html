@@ -1,0 +1,41 @@
+<button
+  #toggleButton
+  type="button"
+  class="toggle"
+  aria-controls="time-zone-panel"
+  [attr.aria-expanded]="panelOpen()"
+  (click)="toggle()"
+>
+  Time zone: {{ zoneId() }}
+</button>
+
+@if (panelOpen()) {
+  <form
+    id="time-zone-panel"
+    class="panel"
+    aria-label="Time zone setting"
+    (submit)="save($event)"
+    (keydown.escape)="closePanel()"
+  >
+    <app-time-zone-picker
+      [zones]="timeZonesApi.zones()"
+      [(value)]="pending"
+      describedBy="time-zone-preview"
+    />
+
+    @if (timeZonesApi.status() === 'error') {
+      <p role="alert" class="error">The list of time zones could not be loaded. Try again later.</p>
+    }
+
+    <p id="time-zone-preview" class="preview">
+      Time now in {{ pending() }}: <app-timestamp [value]="now()" [zoneId]="pending()" />
+    </p>
+
+    <div class="actions">
+      <button type="submit">Save</button>
+      <button type="button" class="secondary" (click)="closePanel()">Cancel</button>
+    </div>
+  </form>
+}
+
+<p class="saved" role="status">{{ savedMessage() }}</p>

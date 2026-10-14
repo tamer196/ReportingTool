@@ -41,9 +41,7 @@
           @for (greeting of greetingsApi.greetings(); track greeting.id) {
             <li>
               <span class="message">{{ greeting.message }}</span>
-              <time [attr.datetime]="greeting.createdAtUtc">
-                {{ greeting.createdAtUtc | date: 'yyyy-MM-dd HH:mm:ss' : 'UTC' }} UTC
-              </time>
+              <app-timestamp [value]="greeting.createdAtUtc" />
             </li>
           } @empty {
             <li class="empty">No greetings yet.</li>

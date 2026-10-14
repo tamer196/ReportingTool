@@ -2,6 +2,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
+import { UserTimeZoneService } from '../shared/time/user-time-zone.service';
 import { Greeting } from './greeting.model';
 import { GreetingsPage } from './greetings-page';
 
@@ -17,6 +18,7 @@ describe('GreetingsPage', () => {
       providers: [provideHttpClient(), provideHttpClientTesting()],
     }).compileComponents();
 
+    TestBed.inject(UserTimeZoneService).apply('Asia/Dubai');
     fixture = TestBed.createComponent(GreetingsPage);
     http = TestBed.inject(HttpTestingController);
     fixture.detectChanges();
@@ -33,13 +35,14 @@ describe('GreetingsPage', () => {
 
   const page = () => fixture.nativeElement as HTMLElement;
 
-  it('lists greetings from the API with their UTC time', async () => {
+  it("lists greetings from the API with their time in the user's time zone", async () => {
     http.expectOne('/api/greetings').flush([seeded]);
     await fixture.whenStable();
 
     const item = page().querySelector('.greetings li');
     expect(item?.textContent).toContain('Hello from SQL Server');
-    expect(item?.querySelector('time')?.textContent).toContain('2026-10-12 00:00:00 UTC');
+    expect(item?.querySelector('time')?.textContent?.trim()).toBe('12 Oct 2026 04:00 UTC+4');
+    expect(item?.querySelector('time')?.getAttribute('datetime')).toBe('2026-10-12T00:00:00Z');
     expect(page().querySelector('footer')?.textContent).toContain('1.0.0+abc123 · Dev');
   });
 

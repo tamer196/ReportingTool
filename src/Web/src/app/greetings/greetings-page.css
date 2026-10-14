@@ -102,14 +102,9 @@ button:disabled {
   overflow-wrap: anywhere;
 }
 
-time,
+app-timestamp,
 .empty,
 .build {
   color: var(--color-text-muted);
   font-size: var(--font-size-sm);
-}
-
-time {
-  white-space: nowrap;
-  font-variant-numeric: tabular-nums;
 }

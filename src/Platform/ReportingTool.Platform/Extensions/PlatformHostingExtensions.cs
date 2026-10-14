@@ -93,8 +93,8 @@ public static class PlatformHostingExtensions
     }
 
     /// <summary>
-    /// The error boundaries, problem-details responses, the UTC clock (BR-14) and the health
-    /// check registry that <see cref="DatabaseExtensions.AddSqlServerDatabase{TContext}"/> and
+    /// The error boundaries, problem-details responses, the UTC clock (BR-14), the time zone
+    /// list (TD-12) and the health check registry that <see cref="DatabaseExtensions.AddSqlServerDatabase{TContext}"/> and
     /// later dependencies add their readiness checks to.
     /// </summary>
     public static WebApplicationBuilder AddPlatformServices(this WebApplicationBuilder builder)
@@ -106,6 +106,9 @@ public static class PlatformHostingExtensions
         // BR-14: the only clock in the codebase (DateTime.Now/UtcNow are banned at compile time).
         // Tests replace it with a FakeTimeProvider.
         builder.Services.TryAddSingleton(TimeProvider.System);
+
+        // TD-12: the one list of valid IANA time zones (#95), shared by every service.
+        builder.Services.AddSingleton<ITimeZoneService, TimeZoneService>();
 
         builder.Services.AddHealthChecks();
         return builder;

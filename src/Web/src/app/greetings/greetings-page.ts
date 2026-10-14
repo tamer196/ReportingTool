@@ -1,19 +1,19 @@
-import { DatePipe } from '@angular/common';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
+import { Timestamp } from '../shared/time/timestamp';
 import { SystemInfoApiService } from '../system/system-info-api.service';
 import { GREETING_MAX_LENGTH } from './greeting.model';
 import { GreetingsApiService } from './greetings-api.service';
 
 /**
  * The hello-world page (RT-106). It proves the whole platform path from the browser: Angular →
- * API → SQL Server and back. Times are shown in UTC with the zone written next to them (BR-14);
- * showing them in the user's own time zone comes with #95.
+ * API → SQL Server and back. Times are stored and sent in UTC (BR-14) and shown in the user's
+ * time zone through the shared timestamp component (#95).
  */
 @Component({
   selector: 'app-greetings-page',
-  imports: [ReactiveFormsModule, DatePipe],
+  imports: [ReactiveFormsModule, Timestamp],
   templateUrl: './greetings-page.html',
   styleUrl: './greetings-page.css',
 })

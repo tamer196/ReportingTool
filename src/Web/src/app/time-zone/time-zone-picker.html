@@ -1,0 +1,44 @@
+<label class="label" [for]="inputId">Time zone</label>
+<div class="combobox">
+  <input
+    [id]="inputId"
+    type="text"
+    role="combobox"
+    autocomplete="off"
+    spellcheck="false"
+    aria-autocomplete="list"
+    [attr.aria-expanded]="open()"
+    [attr.aria-controls]="listboxId"
+    [attr.aria-activedescendant]="activeOptionId()"
+    [attr.aria-describedby]="describedBy()"
+    [value]="inputText()"
+    (input)="onInput($event)"
+    (keydown)="onKeydown($event)"
+    (click)="toggle()"
+    (blur)="close()"
+  />
+  <ul
+    class="listbox"
+    role="listbox"
+    aria-label="Time zones"
+    [id]="listboxId"
+    [hidden]="!open() || matches().length === 0"
+  >
+    @for (zone of matches(); track zone.id; let i = $index) {
+      <li
+        role="option"
+        [id]="optionId(i)"
+        [attr.aria-selected]="zone.id === value()"
+        [class.active]="i === activeIndex()"
+        (mousedown)="pick($event, zone)"
+      >
+        {{ label(zone) }}
+      </li>
+    }
+  </ul>
+  <p class="no-match" role="status">
+    @if (open() && matches().length === 0) {
+      No time zone matches “{{ query() }}”.
+    }
+  </p>
+</div>

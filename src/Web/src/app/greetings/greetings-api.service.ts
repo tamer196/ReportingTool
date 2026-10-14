@@ -2,9 +2,8 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
 import { Observable, tap } from 'rxjs';
 
+import { LoadStatus } from '../shared/load-status';
 import { Greeting } from './greeting.model';
-
-export type LoadStatus = 'idle' | 'loading' | 'ready' | 'error';
 
 /**
  * Transport and state for `/api/greetings`, the hello-world slice. Components read the signals

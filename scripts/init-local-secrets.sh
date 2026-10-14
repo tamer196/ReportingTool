@@ -9,16 +9,30 @@
 # .secrets/ is gitignored and user-secrets live outside the repository, so nothing generated
 # here can be committed.
 #
-# Usage: scripts/init-local-secrets.sh [--force]
-#   --force  replace existing secrets. The SQL Server volume keeps the old SA password, so run
-#            `docker compose down -v` first (this deletes the local database).
+# Usage: scripts/init-local-secrets.sh [--force] [--compose-only]
+#   --force         replace existing secrets. The SQL Server volume keeps the old SA password, so
+#                   run `docker compose down -v` first (this deletes the local database).
+#   --compose-only  write only the Docker Compose secrets in .secrets/ and leave user-secrets
+#                   alone. User-secrets belong to the OS user, not to the clone, so a second copy
+#                   of the repository (the QA environment) would otherwise overwrite your
+#                   development clone's connection string.
 set -euo pipefail
+
+force=false
+compose_only=false
+for arg in "$@"; do
+  case "$arg" in
+    --force) force=true ;;
+    --compose-only) compose_only=true ;;
+    *) echo "Unknown option: $arg (use --force and/or --compose-only)" >&2; exit 2 ;;
+  esac
+done
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 secrets_dir="$repo_root/.secrets"
 api_project="$repo_root/src/Services/ReportingTool.Api"
 
-if [[ -f "$secrets_dir/sql_sa_password" && "${1:-}" != "--force" ]]; then
+if [[ -f "$secrets_dir/sql_sa_password" && "$force" != true ]]; then
   echo "Local secrets already exist in .secrets/. Use --force to replace them (after docker compose down -v)."
   exit 0
 fi
@@ -42,6 +56,11 @@ printf '%s' "$password" > "$secrets_dir/sql_sa_password"
 printf '%s' "Server=sqlserver,1433;$options;Password=$password" > "$secrets_dir/Database__ConnectionString"
 # Bind-mounted Compose secrets keep host permissions; the containers run as non-root users.
 chmod 644 "$secrets_dir"/*
+
+if [[ "$compose_only" == true ]]; then
+  echo "Docker Compose secrets created in .secrets/ (user-secrets left unchanged)."
+  exit 0
+fi
 
 dotnet user-secrets set "Database:ConnectionString" "Server=localhost,${RT_SQL_PORT:-1433};$options;Password=$password" --project "$api_project" > /dev/null
 

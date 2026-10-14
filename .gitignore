@@ -52,6 +52,9 @@ compose.override.yaml
 compose.override.yml
 docker-compose.override.yml
 
+# QA test environment (scripts/qa-env.ps1): an exported commit with its own generated secrets
+.qa-env/
+
 # OS noise
 Thumbs.db
 ehthumbs.db

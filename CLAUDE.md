@@ -21,6 +21,9 @@ dotnet format ReportingTool.slnx --verify-no-changes
 
 cd src/Web && npm ci && npm start     # Angular on http://localhost:4300, proxies /api to :5080
 npm run lint && npm run test:ci && npm run build
+
+scripts/qa-env.ps1 up [<commit>]      # QA's stack: main at a commit (status, reset, fingerprint, down)
+tests/qa-env/qa-env.e2e.ps1           # its end-to-end test (needs Docker, about 4 minutes)
 ```
 
 Hosting: Phase 1 runs entirely in Docker Compose on one machine (ADR-002, D-15); nothing is
@@ -73,8 +76,9 @@ services own HTTP; design tokens only in component CSS (`src/Web/STYLE.md`).
 | `src/Services/ReportingTool.Api/Persistence/Migrations` | EF Core migrations (generated) |
 | `src/Web` | Angular 21 SPA + nginx image config |
 | `tests/*` | xUnit v3 on Microsoft.Testing.Platform; API tests use Testcontainers SQL Server |
-| `compose.yaml`, `scripts/` | Local environment and local secrets |
-| `.github/workflows` | `ci.yml` (pull requests and main), `cd.yml` (manual, builds images only, deploys nothing) |
+| `compose.yaml`, `scripts/` | Local environment, local secrets, and the QA test environment (`qa-env.ps1`, RT-121) |
+| `tests/qa-env` | End-to-end test of `qa-env.ps1` (PowerShell; not part of `dotnet test`) |
+| `.github/workflows` | `ci.yml` (pull requests and main), `qa-env.yml` (QA environment test, path-filtered), `cd.yml` (manual, builds images only, deploys nothing) |
 | `CHANGELOG.md`, `docs/releases/` | One entry and one release-notes file per milestone tag (*Delivery/00* §5) |
 
 ## Environment pins & gotchas
@@ -87,6 +91,18 @@ services own HTTP; design tokens only in component CSS (`src/Web/STYLE.md`).
 - Ports: web 8080 (compose), API 5080 (compose and `dotnet run`), Angular dev server 4300, SQL 1433.
   On the shared agent machine each workspace overrides them with `RT_WEB_PORT`, `RT_API_PORT` and
   `RT_SQL_PORT`, and names its stack with `COMPOSE_PROJECT_NAME`, so parallel stacks never collide.
+  The QA environment takes 10 ports from `RT_WEB_PORT + 400` (web, API, SQL, then any further
+  `RT_*_PORT` variable in `compose.yaml`) and the project `<COMPOSE_PROJECT_NAME>-test`.
+- `scripts/qa-env.ps1` runs a commit's own `compose.yaml` with a generated override: every
+  service on an internal network with no route out, published ports removed and re-published by
+  an nginx gateway on `127.0.0.1`, built images tagged `<project>-<service>:<commit>`, and
+  `ASPNETCORE_ENVIRONMENT=Test` for every service that sets it. A new service in `compose.yaml`
+  must work under those rules: no outbound calls at runtime, ports through `RT_*_PORT`
+  variables, no `network_mode`. Secrets come from the commit's `init-local-secrets.ps1
+  -ComposeOnly`, so add new Compose secrets there.
+- Scripts in `scripts/` and `tests/qa-env/` run in Windows PowerShell 5.1 and PowerShell 7: keep
+  them ASCII-only (5.1 reads BOM-less files as ANSI) and don't pass arguments with embedded
+  double quotes to native commands (5.1 drops them).
 - `dotnet user-secrets` is per Windows user, so agents on the shared machine share it: prefer
   `docker compose up` (secrets live in this clone's `.secrets/`) over `dotnet run` against SQL.
 - `ASPNETCORE_ENVIRONMENT`: `Development` = a developer machine (including compose);

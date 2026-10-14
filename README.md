@@ -42,6 +42,23 @@ No secret is ever committed.
 | Run the front end with hot reload | `cd src/Web && npm ci && npm start` → http://localhost:4300 |
 | Test / lint / build the front end | `npm run test:ci`, `npm run lint`, `npm run build` |
 
+## QA test environment
+
+QA tests `main` at a merge commit on a stack of its own, next to the developer stack:
+
+```powershell
+./scripts/qa-env.ps1 up [<commit>]   # the latest main, or main at <commit>; prints the address
+./scripts/qa-env.ps1 status          # commit, addresses, containers, smoke check
+./scripts/qa-env.ps1 reset           # same commit, back to the seeded data
+./scripts/qa-env.ps1 fingerprint     # row counts and checksums: equal data, equal hash
+./scripts/qa-env.ps1 down            # removes everything it created
+```
+
+It exports the commit into `.qa-env/` (gitignored, with its own generated secrets) and runs that
+commit's `compose.yaml` as a separate Compose project. Its ports are published on `127.0.0.1`
+only, and its containers have no route to the internet. macOS/Linux: run it with `pwsh`. The
+guide is the *QA test environment* section of **Architecture/Developer Setup & Pipelines**.
+
 ## Contributing
 
 Every change reaches `main` through a pull request. The full process is the Paca doc
@@ -83,8 +100,10 @@ src/Platform/ReportingTool.Platform   shared plumbing: logging, error handling, 
 src/Services/ReportingTool.Api        first .NET service (hello-world slice)
 src/Web                               Angular app and its nginx image
 tests/                                .NET unit and integration tests
-compose.yaml, scripts/                local environment
-.github/                              CI, build-only CD, pull request template, Dependabot
+compose.yaml, scripts/                local environment and the QA test environment (qa-env.ps1)
+tests/qa-env/                         end-to-end test of the QA test environment
+.github/                              CI, the QA environment test, build-only CD, pull request
+                                      template, Dependabot
 CHANGELOG.md, docs/releases/          one entry and one release-notes file per milestone tag
 ```
 

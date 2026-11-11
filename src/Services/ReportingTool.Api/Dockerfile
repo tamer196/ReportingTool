@@ -3,7 +3,7 @@
 # repo-wide Directory.*.props files.
 #   docker build -f src/Services/ReportingTool.Api/Dockerfile --build-arg SOURCE_REVISION=$(git rev-parse HEAD) .
 
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:11.0 AS build
 WORKDIR /repo
 
 # Restore first, from project files only, so the package layer is cached across code changes.
